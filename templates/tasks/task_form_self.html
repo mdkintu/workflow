@@ -15,62 +15,48 @@
 
     {# Title #}
     <div>
-      <label for="{{ form.title.id_for_label }}" class="block mb-2">
-        {{ form.title.label }}
-      </label>
-      {{ form.title }}
-      {% if form.title.errors %}
-        <span class="text-red-500 text-sm">{{ form.title.errors.0 }}</span>
-      {% endif %}
+      <label for="id_title" class="label">{% translate "Title" %}</label>
+      <input type="text" name="title" id="id_title" maxlength="120" required value="{{ form.title.value|default:'' }}" class="input {% if form.title.errors %}is-error{% endif %}">
+      {% for e in form.title.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
     </div>
 
     {# Details #}
     <div>
-      <label for="{{ form.description.id_for_label }}" class="block mb-2">
-        {{ form.description.label }}
-      </label>
-      {{ form.description }}
-      {% if form.description.errors %}
-        <span class="text-red-500 text-sm">{{ form.description.errors.0 }}</span>
-      {% endif %}
+      <label for="id_description" class="label">{% translate "Details" %}</label>
+      <textarea name="description" id="id_description" maxlength="1000" class="input {% if form.description.errors %}is-error{% endif %}" rows="4">{{ form.description.value|default:'' }}</textarea>
+      {% for e in form.description.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
     </div>
 
-    {# Due Date #}
+    {# Due Date & Time #}
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label for="{{ form.due_date.id_for_label }}" class="block mb-2">
-          {{ form.due_date.label }}
-        </label>
-        {{ form.due_date }}
-        {% if form.due_date.errors %}
-          <span class="text-red-500 text-sm">{{ form.due_date.errors.0 }}</span>
-        {% endif %}
+        <label for="id_due_date" class="label">{% translate "Due date" %}</label>
+        <input type="date" name="due_date" id="id_due_date" required value="{{ form.due_date.value|default:'' }}" class="input {% if form.due_date.errors %}is-error{% endif %}">
+        {% for e in form.due_date.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
       </div>
       <div>
-        <label for="{{ form.due_time.id_for_label }}" class="block mb-2">
-          {{ form.due_time.label }}
-        </label>
-        {{ form.due_time }}
-        {% if form.due_time.errors %}
-          <span class="text-red-500 text-sm">{{ form.due_time.errors.0 }}</span>
-        {% endif %}
+        <label for="id_due_time" class="label">{% translate "Due time" %}</label>
+        <input type="time" name="due_time" id="id_due_time" required value="{{ form.due_time.value|default:'' }}" class="input {% if form.due_time.errors %}is-error{% endif %}">
+        {% for e in form.due_time.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
       </div>
     </div>
 
     {# Photo Required #}
     <div class="flex items-center">
-      {{ form.photo_required }}
-      <label for="{{ form.photo_required.id_for_label }}" class="ml-2">
-        {{ form.photo_required.label }}
-      </label>
+      <input type="checkbox" name="photo_required" id="id_photo_required" value="true" {% if form.photo_required.value %}checked{% endif %} class="checkbox">
+      <label for="id_photo_required" class="ml-2">{% translate "Photo required" %}</label>
     </div>
 
     {# Reminder #}
     <div>
-      <label for="{{ form.reminder_lead_min.id_for_label }}" class="block mb-2">
-        {{ form.reminder_lead_min.label }}
-      </label>
-      {{ form.reminder_lead_min }}
+      <label for="id_reminder_lead_min" class="label">{% translate "Reminder" %}</label>
+      <select name="reminder_lead_min" id="id_reminder_lead_min" class="input">
+        <option value="">{% translate "None" %}</option>
+        <option value="15" {% if form.reminder_lead_min.value == '15' %}selected{% endif %}>{% translate "15 minutes before" %}</option>
+        <option value="30" {% if form.reminder_lead_min.value == '30' %}selected{% endif %}>{% translate "30 minutes before" %}</option>
+        <option value="60" {% if form.reminder_lead_min.value == '60' %}selected{% endif %}>{% translate "1 hour before" %}</option>
+        <option value="1440" {% if form.reminder_lead_min.value == '1440' %}selected{% endif %}>{% translate "1 day before" %}</option>
+      </select>
     </div>
 
     {# Recurring Options #}
@@ -78,33 +64,38 @@
       <legend class="text-lg font-semibold mb-4">{% translate "Repeating" %}</legend>
 
       <div class="flex items-center mb-4">
-        {{ form.recurs }}
-        <label for="{{ form.recurs.id_for_label }}" class="ml-2">
-          {{ form.recurs.label }}
-        </label>
+        <input type="checkbox" name="recurs" id="id_recurs" {% if form.recurs.value %}checked{% endif %} class="checkbox">
+        <label for="id_recurs" class="ml-2">{% translate "Repeating task" %}</label>
       </div>
 
       <div id="recurring-options" style="display: none;">
         {# Kind #}
         <div class="mb-4">
-          <label for="{{ form.kind.id_for_label }}" class="block mb-2">
-            {{ form.kind.label }}
-          </label>
-          {{ form.kind }}
+          <label for="id_kind" class="label">{% translate "Frequency" %}</label>
+          <select name="kind" id="id_kind" class="input">
+            <option value="">---</option>
+            <option value="daily" {% if form.kind.value == 'daily' %}selected{% endif %}>{% translate "Daily" %}</option>
+            <option value="weekly" {% if form.kind.value == 'weekly' %}selected{% endif %}>{% translate "Weekly" %}</option>
+          </select>
         </div>
 
         {# Weekdays #}
         <div class="mb-4">
-          <p class="block mb-2 font-semibold">{{ form.weekdays.label }}</p>
-          {{ form.weekdays }}
+          <p class="label">{% translate "Days" %}</p>
+          <div class="space-y-2">
+            {% for value, label in form.weekdays.field.choices %}
+              <div class="flex items-center">
+                <input type="checkbox" name="weekdays" id="id_weekdays_{{ value }}" value="{{ value }}" {% if value|stringformat:"s" in form.weekdays.value %}checked{% endif %} class="checkbox">
+                <label for="id_weekdays_{{ value }}" class="ml-2">{{ label }}</label>
+              </div>
+            {% endfor %}
+          </div>
         </div>
 
         {# Ends On #}
         <div>
-          <label for="{{ form.ends_on.id_for_label }}" class="block mb-2">
-            {{ form.ends_on.label }}
-          </label>
-          {{ form.ends_on }}
+          <label for="id_ends_on" class="label">{% translate "Stops on" %}</label>
+          <input type="date" name="ends_on" id="id_ends_on" value="{{ form.ends_on.value|default:'' }}" class="input">
         </div>
       </div>
     </fieldset>
