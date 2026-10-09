@@ -24,7 +24,7 @@ _GENERIC_CODE_ERROR = _("That code is invalid or has expired.")
 
 def login_view(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
-        return redirect("home")
+        return redirect("tasks:list")
 
     error = None
     if request.method == "POST":
@@ -48,7 +48,7 @@ def login_view(request: HttpRequest) -> HttpResponse:
 
         if user is not None:
             auth_login(request, user)
-            return redirect("home")
+            return redirect("tasks:list")
         error = _("Wrong phone number, email, or PIN.")
 
     return render(request, "accounts/login.html", {"error": error})
@@ -70,7 +70,7 @@ def pin_setup_view(request: HttpRequest) -> HttpResponse:
     reset — both just issue a PinSetupToken (accounts.services), so this one
     public, rate-limited view handles either."""
     if request.user.is_authenticated:
-        return redirect("home")
+        return redirect("tasks:list")
 
     error = None
     if request.method == "POST":
@@ -98,7 +98,7 @@ def pin_setup_view(request: HttpRequest) -> HttpResponse:
             if error is None:
                 _complete_pin_setup(user, token, pin)
                 auth_login(request, user, backend="accounts.backends.PinBackend")
-                return redirect("home")
+                return redirect("tasks:list")
 
     return render(request, "accounts/pin_setup.html", {"error": error})
 
