@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n ui %}
 
 {% block title %}Create Task · WorkFlow{% endblock %}
 
@@ -17,14 +17,18 @@
     <div>
       <label for="id_title" class="label">{% translate "Title" %}</label>
       <input type="text" name="title" id="id_title" maxlength="120" required value="{{ form.title.value|default:'' }}" class="input {% if form.title.errors %}is-error{% endif %}">
-      {% for e in form.title.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+      {% for e in form.title.errors %}
+        <p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>
+      {% endfor %}
     </div>
 
     {# Details #}
     <div>
       <label for="id_description" class="label">{% translate "Details" %}</label>
       <textarea name="description" id="id_description" maxlength="1000" class="input {% if form.description.errors %}is-error{% endif %}" rows="4">{{ form.description.value|default:'' }}</textarea>
-      {% for e in form.description.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+      {% for e in form.description.errors %}
+        <p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>
+      {% endfor %}
     </div>
 
     {# Due Date & Time #}
@@ -32,12 +36,16 @@
       <div>
         <label for="id_due_date" class="label">{% translate "Due date" %}</label>
         <input type="date" name="due_date" id="id_due_date" required value="{{ form.due_date.value|default:'' }}" class="input {% if form.due_date.errors %}is-error{% endif %}">
-        {% for e in form.due_date.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+        {% for e in form.due_date.errors %}
+          <p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>
+        {% endfor %}
       </div>
       <div>
         <label for="id_due_time" class="label">{% translate "Due time" %}</label>
         <input type="time" name="due_time" id="id_due_time" required value="{{ form.due_time.value|default:'' }}" class="input {% if form.due_time.errors %}is-error{% endif %}">
-        {% for e in form.due_time.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+        {% for e in form.due_time.errors %}
+          <p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>
+        {% endfor %}
       </div>
     </div>
 
