@@ -17,7 +17,7 @@
         <a href="{% url 'tasks:create' %}" class="btn btn-primary">{% icon "plus" %}{% translate "New task" %}</a>
       {% endif %}
       {% if can_create_self %}
-        <a href="{% url 'tasks:create-self' %}" class="btn btn-secondary">{% icon "plus" %}{% translate "Task for myself" %}</a>
+        <a href="{% url 'tasks:create_self' %}" class="btn btn-secondary">{% icon "plus" %}{% translate "Task for myself" %}</a>
       {% endif %}
     </div>
   </div>
