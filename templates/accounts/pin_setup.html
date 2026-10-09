@@ -14,8 +14,8 @@
       <form method="post" class="space-y-5">
         {% csrf_token %}
         <div>
-          <label for="id_phone" class="label">{% translate "Phone number" %}</label>
-          <input type="tel" inputmode="numeric" id="id_phone" name="phone" required autofocus class="input" placeholder="0772 123 456">
+          <label for="id_identifier" class="label">{% translate "Phone or email" %}</label>
+          <input type="text" id="id_identifier" name="identifier" required autofocus class="input" placeholder="0772 123 456 or you@example.com">
         </div>
         <div>
           <label for="id_code" class="label">{% translate "SMS code" %}</label>

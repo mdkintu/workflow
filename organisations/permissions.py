@@ -52,6 +52,7 @@ _MIN_ROLE: dict[str, Role] = {
     "template.manage": Role.MANAGER,
     "task.view": Role.STAFF,
     "task.create": Role.SUPERVISOR,
+    "task.create_self": Role.STAFF,
     "task.edit": Role.SUPERVISOR,
     "task.cancel": Role.SUPERVISOR,
     "task.start": Role.STAFF,

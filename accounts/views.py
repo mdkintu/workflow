@@ -37,13 +37,19 @@ def login_view(request: HttpRequest) -> HttpResponse:
             )
         record_login_attempt(request, scope="login")
 
-        phone = request.POST.get("phone", "")
+        identifier = request.POST.get("identifier", "")
         pin = request.POST.get("pin", "")
-        user = authenticate(request, phone=phone, pin=pin)
+
+        # Detect if identifier is email or phone
+        if "@" in identifier:
+            user = authenticate(request, email=identifier, pin=pin)
+        else:
+            user = authenticate(request, phone=identifier, pin=pin)
+
         if user is not None:
             auth_login(request, user)
             return redirect("home")
-        error = _("Wrong phone number or PIN.")
+        error = _("Wrong phone number, email, or PIN.")
 
     return render(request, "accounts/login.html", {"error": error})
 
@@ -77,12 +83,12 @@ def pin_setup_view(request: HttpRequest) -> HttpResponse:
             )
         record_login_attempt(request, scope="pin-setup")
 
-        phone = request.POST.get("phone", "")
+        identifier = request.POST.get("identifier", "")
         code = request.POST.get("code", "")
         pin = request.POST.get("pin", "")
         pin_confirm = request.POST.get("pin_confirm", "")
 
-        user, token = _find_valid_token(phone, code)
+        user, token = _find_valid_token(identifier, code)
         if user is None or token is None:
             error = _GENERIC_CODE_ERROR
         elif pin != pin_confirm:
@@ -97,11 +103,19 @@ def pin_setup_view(request: HttpRequest) -> HttpResponse:
     return render(request, "accounts/pin_setup.html", {"error": error})
 
 
-def _find_valid_token(raw_phone: str, code: str) -> tuple[User | None, PinSetupToken | None]:
+def _find_valid_token(raw_identifier: str, code: str) -> tuple[User | None, PinSetupToken | None]:
+    user = None
     try:
-        phone_e164 = normalise(raw_phone)
-        user = User.objects.get(phone_e164=phone_e164)
+        # Try email first if it looks like one
+        if "@" in raw_identifier:
+            user = User.objects.get(email=raw_identifier)
+        else:
+            phone_e164 = normalise(raw_identifier)
+            user = User.objects.get(phone_e164=phone_e164)
     except (ValueError, User.DoesNotExist):
+        return None, None
+
+    if user is None:
         return None, None
 
     token = (

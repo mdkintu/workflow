@@ -9,6 +9,7 @@ urlpatterns = [
     path("", views.task_list, name="list"),
     path("my/", views.my_tasks, name="my"),
     path("new/", views.task_create, name="create"),
+    path("new/self/", views.task_create_self, name="create-self"),
     path("partials/assignees", views.assignee_options, name="assignees"),
     path("<uuid:task_id>/", views.task_detail, name="detail"),
     path("<uuid:task_id>/edit/", views.task_edit, name="edit"),

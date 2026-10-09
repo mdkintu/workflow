@@ -61,6 +61,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     phone_e164 = models.CharField(max_length=16, unique=True)
+    email = models.EmailField(
+        null=True, blank=True, help_text="Optional email for login (in addition to phone)"
+    )
     name = models.CharField(max_length=80, blank=True)
     must_set_pin = models.BooleanField(default=True)
     failed_pin_attempts = models.PositiveSmallIntegerField(default=0)

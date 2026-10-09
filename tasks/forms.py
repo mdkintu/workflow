@@ -159,3 +159,111 @@ class TaskForm(forms.Form):
             "photo_required": data["photo_required"],
             "reminder_lead_min": data["reminder_lead_min"],
         }
+
+
+class SelfTaskForm(forms.Form):
+    """One-off self-task: staff creates a task for themselves."""
+
+    title = forms.CharField(label=_("Title"), max_length=120)
+    description = forms.CharField(
+        label=_("Details"), max_length=1000, required=False, widget=forms.Textarea
+    )
+    due_date = forms.DateField(label=_("Due date"))
+    due_time = forms.TimeField(label=_("Due time"))
+    photo_required = forms.BooleanField(label=_("Photo required"), required=False)
+    reminder_lead_min = forms.TypedChoiceField(
+        label=_("Reminder"),
+        choices=REMINDER_CHOICES,
+        coerce=int,
+        empty_value=None,
+        required=False,
+    )
+
+    def __init__(self, *args: Any, membership: Membership, **kw):
+        super().__init__(*args, **kw)
+        self.membership = membership
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean()
+
+        if data.get("due_date") and data.get("due_time"):
+            due_at = datetime.combine(
+                data["due_date"], data["due_time"], tzinfo=timezone.get_current_timezone()
+            )
+            if due_at < timezone.now() - BACKFILL_WINDOW:
+                self.add_error("due_date", _("The due time is in the past."))
+            data["due_at"] = due_at
+
+        return data
+
+    def task_fields(self) -> dict[str, Any]:
+        """Return Task field values for a self-task."""
+        data = self.cleaned_data
+        return {
+            "title": data["title"],
+            "description": data["description"],
+            "location": self.membership.organisation.locations.first(),
+            "assignee_membership": self.membership,
+            "assignee_shift": None,
+            "assignee_location": False,
+            "shift_date": None,
+            "due_at": data["due_at"],
+            "photo_required": data["photo_required"],
+            "reminder_lead_min": data["reminder_lead_min"],
+        }
+
+
+class SelfTaskRecurringForm(SelfTaskForm):
+    """Recurring self-task with frequency and time settings."""
+
+    DAILY = "daily"
+    WEEKLY = "weekly"
+
+    RECURRENCE_CHOICES = [(DAILY, _("Daily")), (WEEKLY, _("Weekly"))]
+
+    recurs = forms.BooleanField(label=_("Repeating task"), required=False)
+    kind = forms.ChoiceField(
+        label=_("Frequency"), choices=RECURRENCE_CHOICES, required=False, initial=DAILY
+    )
+    weekdays = forms.MultipleChoiceField(
+        label=_("Days"),
+        choices=[
+            (0, _("Monday")),
+            (1, _("Tuesday")),
+            (2, _("Wednesday")),
+            (3, _("Thursday")),
+            (4, _("Friday")),
+            (5, _("Saturday")),
+            (6, _("Sunday")),
+        ],
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+    ends_on = forms.DateField(label=_("Stops on"), required=False)
+
+    def clean(self) -> dict[str, Any]:
+        data = super().clean()
+
+        if data.get("recurs"):
+            if not data.get("kind"):
+                self.add_error("kind", _("Choose frequency"))
+            if data.get("kind") == self.WEEKLY and not data.get("weekdays"):
+                self.add_error("weekdays", _("Choose at least one day"))
+
+        return data
+
+    def rule_fields(self) -> dict[str, Any]:
+        """Return TaskRecurrenceRule field values."""
+        from tasks.models import TaskRecurrenceRule
+
+        data = self.cleaned_data
+        if not data.get("recurs"):
+            return {}
+
+        return {
+            "kind": data["kind"],
+            "weekdays": [int(d) for d in data.get("weekdays", [])],
+            "starts_on": data["due_date"],
+            "ends_on": data.get("ends_on"),
+            "times": [[data["due_time"].hour, data["due_time"].minute]],
+        }

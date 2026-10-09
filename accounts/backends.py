@@ -25,24 +25,35 @@ class PinBackend(BaseBackend):
         username: str | None = None,
         password: str | None = None,
         phone: str | None = None,
+        email: str | None = None,
         pin: str | None = None,
         **kwargs: Any,
     ):
-        raw_phone = phone or username
+        raw_identifier = phone or email or username
         raw_pin = pin if pin is not None else password
-        if not raw_phone or not raw_pin:
+        if not raw_identifier or not raw_pin:
             return None
 
         user_model = get_user_model()
-        try:
-            phone_e164 = normalise(raw_phone)
-        except ValueError:
-            return None
 
-        try:
-            user = user_model.objects.get(phone_e164=phone_e164)
-        except user_model.DoesNotExist:
-            return None
+        # Try to find user by email first if it looks like email
+        if email or (username and "@" in str(username)):
+            identifier = email or username
+            try:
+                user = user_model.objects.get(email=identifier)
+            except user_model.DoesNotExist:
+                return None
+        else:
+            # Try phone
+            try:
+                phone_e164 = normalise(raw_identifier)
+            except ValueError:
+                return None
+
+            try:
+                user = user_model.objects.get(phone_e164=phone_e164)
+            except user_model.DoesNotExist:
+                return None
 
         now = timezone.now()
         if user.locked_until and user.locked_until > now:

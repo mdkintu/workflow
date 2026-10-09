@@ -456,3 +456,47 @@ def photo_file(request: HttpRequest, photo_id: UUID, thumb: bool = False) -> Htt
     if not (can(membership, "photo.view", obj=photo) and visible):
         raise PermissionDenied
     return photo_response(photo, thumb=thumb)
+
+
+@login_required
+def task_create_self(request: HttpRequest) -> HttpResponse:
+    """Staff creates a one-off task for themselves. Auto-assigns to current
+    person and uses the organisation's default location."""
+    from tasks.forms import SelfTaskRecurringForm
+
+    membership = request.membership
+    if not can(membership, "task.create_self"):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = SelfTaskRecurringForm(request.POST, membership=membership)
+        if form.is_valid():
+            # Create the one-off self-task
+            fields = form.task_fields()
+            task = Task.objects.create(created_by=membership, **fields)
+            messages.success(request, _("Task created"))
+
+            # If recurring, create the rule and first occurrence
+            if form.cleaned_data.get("recurs"):
+                from tasks.models import TaskRecurrenceRule
+
+                rule = TaskRecurrenceRule.objects.create(
+                    organisation=membership.organisation,
+                    created_by=membership,
+                    **form.rule_fields(),
+                )
+                task.recurrence_rule = rule
+                task.occurrence_start = timezone.now().replace(
+                    hour=int(form.cleaned_data["due_time"].hour),
+                    minute=int(form.cleaned_data["due_time"].minute),
+                    second=0,
+                    microsecond=0,
+                )
+                task.save()
+
+            return redirect("tasks:list", bucket="open")
+
+    else:
+        form = SelfTaskRecurringForm(membership=membership)
+
+    return render(request, "tasks/task_form_self.html", {"form": form})

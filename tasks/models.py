@@ -13,7 +13,7 @@ from django.db.models import Case, Exists, OuterRef, Q, Value, When
 from django.db.models.functions import Now, TruncDate
 from django.utils import timezone
 
-from organisations.tenancy import SyncedTenantModel, TenantScopedManager
+from organisations.tenancy import SyncedTenantModel, TenantModel, TenantScopedManager
 
 _has_membership = models.Q(assignee_membership__isnull=False)
 _has_shift = models.Q(assignee_shift__isnull=False)
@@ -163,6 +163,16 @@ class Task(SyncedTenantModel):
         null=True,
         blank=True,
         related_name="cancelled_tasks",
+    )
+    recurrence_rule = models.ForeignKey(
+        "TaskRecurrenceRule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="task_occurrences",
+    )
+    occurrence_start = models.DateTimeField(
+        null=True, blank=True, help_text="When this occurrence begins (for recurring tasks)"
     )
 
     # Tenant-scoped like every TenantModel, plus visible_to()/mine()/
@@ -320,3 +330,57 @@ class TaskComment(SyncedTenantModel):
 
     def __str__(self) -> str:
         return self.body[:40]
+
+
+class TaskRecurrenceRuleQuerySet(models.QuerySet):
+    def active(self) -> "TaskRecurrenceRuleQuerySet":
+        return self.filter(is_active=True)
+
+
+class TaskRecurrenceRule(TenantModel):
+    """Template for recurring self-tasks. One rule generates multiple Task
+    occurrences on a schedule (daily, weekly, at shift start)."""
+
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    SHIFT_START = "shift_start"
+
+    KIND_CHOICES = [
+        (DAILY, "Daily"),
+        (WEEKLY, "Weekly"),
+        (SHIFT_START, "At shift start"),
+    ]
+
+    created_by = models.ForeignKey(
+        "organisations.Membership", on_delete=models.PROTECT, related_name="created_recurrence_rules"
+    )
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    times = models.JSONField(
+        default=list, help_text="List of [hours, minutes] or empty for all-day"
+    )
+    weekdays = models.JSONField(default=list, help_text="List of 0-6 (Mon-Sun), empty for all days")
+    available_before_min = models.PositiveSmallIntegerField(null=True, blank=True)
+    due_offset_min = models.PositiveSmallIntegerField(default=0)
+    starts_on = models.DateField()
+    ends_on = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    objects = TenantScopedManager.from_queryset(TaskRecurrenceRuleQuerySet)()
+
+    class Meta(TenantModel.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organisation", "created_by", "starts_on"],
+                name="unique_rule_per_creator_date",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["organisation", "is_active", "starts_on"],
+                name="idx_rule_org_active_start",
+            ),
+        ]
+        verbose_name = "Task Recurrence Rule"
+
+    def __str__(self) -> str:
+        return f"{self.get_kind_display()} rule for {self.created_by.name}"
