@@ -1,0 +1,22 @@
+# Vendored front-end libraries (ADR-14: no npm; pinned, checksummed files).
+# Update by hand: download, verify the sha256 below, then edit this file.
+
+htmx.org 2.0.4
+  file:   frontend/vendor/htmx.min.js
+  source: https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js
+  sha256: e209dda5c8235479f3166defc7750e1dbcd5a5c1808b7792fc2e6733768fb447
+
+alpinejs 3.14.8
+  file:   frontend/vendor/alpine.min.js
+  source: https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js
+  sha256: b600e363d99d95444db54acbfb2deffec9ae792aa99a09229bcda078e5b55643
+
+dexie 4.0.11
+  file:   frontend/vendor/dexie.min.js
+  source: https://cdn.jsdelivr.net/npm/dexie@4.0.11/dist/dexie.min.js
+  sha256: 7a87c641797015e178fa150f9c9971a0308bece225ee6edd5dd4d7b7582e6e27
+
+lucide-static 1.48.0 (ADR-20; only the icons we use, ISC licence)
+  files:  frontend/vendor/lucide/<name>.svg
+  source: https://cdn.jsdelivr.net/npm/lucide-static@1.48.0/icons/<name>.svg
+  sha256: a8aebda43dfb1478c2906c816a925ba93eb9ef5e946e0f9a246287a6a3f1399e  (of `cat frontend/vendor/lucide/*.svg`, sorted by name)

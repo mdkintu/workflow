@@ -1,0 +1,131 @@
+<!doctype html>
+{% load static i18n ui %}{% get_current_language as LANG %}
+<html lang="{{ LANG }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}WorkFlow{% endblock %}</title>
+  <link rel="manifest" href="{% url 'manifest' %}">
+  <link rel="icon" href="{% static 'icons/icon-192.png' %}">
+  {% include "_head.html" %}
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+{% if nav %}
+<div class="app-shell" x-data="{ drawer: false, online: navigator.onLine }"
+     @online.window="online = true" @offline.window="online = false"
+     @keydown.escape.window="drawer = false">
+
+  {# ---------- Sidebar (drawer under 1024px) ---------- #}
+  <div class="drawer-backdrop" x-show="drawer" x-cloak @click="drawer = false"></div>
+  <aside id="sidebar" class="sidebar" :class="drawer && 'is-open'" aria-label="{% translate 'Main' %}">
+    <div class="brand">
+      <span class="brand-tile" aria-hidden="true">WF</span>
+      <span class="min-w-0 flex-1">
+        <span class="brand-name block truncate">{{ request.organisation.name }}</span>
+        <span class="brand-sub block">WorkFlow</span>
+      </span>
+      <button type="button" class="btn btn-icon is-bare sidebar-close" @click="drawer = false" aria-label="{% translate 'Close menu' %}">{% icon "x" %}</button>
+    </div>
+    <hr class="divider">
+    <p class="section-label">{% translate "Workspace" %}</p>
+    <nav class="flex flex-col gap-1">
+      {% if nav.dashboard %}<a href="{% url 'dashboard:dashboard' %}" class="nav-item" {% if nav_current == "dashboard" %}aria-current="page"{% endif %}>{% icon "layout-dashboard" %}{% translate "Dashboard" %}</a>{% endif %}
+      <a href="{% url 'tasks:my' %}" class="nav-item" {% if nav_current == "my" %}aria-current="page"{% endif %}>{% icon "circle-check" %}{% translate "My tasks" %}</a>
+      {% if nav.tasks %}<a href="{% url 'tasks:list' %}" class="nav-item" {% if nav_current == "tasks" %}aria-current="page"{% endif %}>{% icon "kanban" %}{% translate "Tasks" %}</a>{% endif %}
+      {% if nav.checklists %}<a href="{% url 'checklists:runs' %}" class="nav-item" {% if nav_current == "checklists" %}aria-current="page"{% endif %}>{% icon "list-checks" %}{% translate "Checklists" %}</a>{% endif %}
+      {% if nav.roster %}<a href="{% url 'roster:roster' %}" class="nav-item" {% if nav_current == "roster" %}aria-current="page"{% endif %}>{% icon "calendar-days" %}{% translate "Roster" %}</a>{% endif %}
+      {% if nav.people %}<a href="{% url 'organisations:people' %}" class="nav-item" {% if nav_current == "people" %}aria-current="page"{% endif %}>{% icon "users" %}{% translate "People" %}</a>{% endif %}
+      {% if nav.setup %}<a href="{% url 'organisations:locations' %}" class="nav-item" {% if nav_current == "setup" %}aria-current="page"{% endif %}>{% icon "settings" %}{% translate "Setup" %}</a>{% endif %}
+    </nav>
+    <p class="section-label">{% translate "Help" %}</p>
+    <nav class="flex flex-col gap-1">
+      <a href="{% url 'styleguide' %}" class="nav-item" {% if nav_current == "styleguide" %}aria-current="page"{% endif %}>{% icon "palette" %}{% translate "Style guide" %}</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p class="sync-line" role="status">
+        <span class="status-dot" :class="online ? 'dot-success' : 'dot-idle'"></span>
+        <span x-text="online ? '{{ _("Connected")|escapejs }}' : '{{ _("No connection")|escapejs }}'">{% translate "Connected" %}</span>
+      </p>
+      <div class="user-card">
+        <span class="avatar">{{ request.membership.name|initials }}</span>
+        <span class="min-w-0 flex-1">
+          <span class="name block truncate">{{ request.membership.name }}</span>
+          <span class="role block">{{ request.membership.get_role_display }}</span>
+        </span>
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-icon is-bare" aria-label="{% translate 'Log out' %}" title="{% translate 'Log out' %}">{% icon "log-out" %}</button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  {# ---------- Main column ---------- #}
+  <div class="app-main">
+    <header class="topbar">
+      <button type="button" class="btn btn-icon menu-btn" @click="drawer = true" aria-controls="sidebar" :aria-expanded="drawer" aria-label="{% translate 'Open menu' %}">{% icon "menu" %}</button>
+      <div class="topbar-context">
+        <span class="font-semibold text-heading truncate sm:hidden">{{ request.organisation.name }}</span>
+        <span class="hidden sm:inline">{% translate "Timezone:" %}</span>
+        <span class="chip hidden sm:inline-flex">{% icon "clock" size=14 %}{{ request.organisation.timezone }}</span>
+      </div>
+      <div class="topbar-actions">
+        <span class="status-pill" :class="online || 'is-offline'" role="status">
+          <span class="status-dot" :class="online ? 'dot-success' : 'dot-idle'"></span>
+          <span class="hidden sm:inline" x-text="online ? '{{ _("Online")|escapejs }}' : '{{ _("Offline")|escapejs }}'">{% translate "Online" %}</span>
+        </span>
+        <button type="button" class="btn btn-icon" x-data="{ dark: window.wfTheme && wfTheme.isDark() }"
+                @click="dark = wfTheme.toggle()" :aria-pressed="dark" aria-label="{% translate 'Dark mode' %}" title="{% translate 'Dark mode' %}">
+          <span x-show="!dark">{% icon "moon" %}</span><span x-show="dark" x-cloak>{% icon "sun" %}</span>
+        </button>
+        {# F5.6: my own recent notifications; opening the list marks them seen. #}
+        <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false">
+          <button type="button" class="btn btn-icon" aria-haspopup="true" :aria-expanded="open"
+                  aria-label="{% translate 'Notifications' %}" title="{% translate 'Notifications' %}"
+                  @click="open = !open" hx-get="{% url 'notifications:list' %}" hx-target="#notif-body" hx-trigger="click once">
+            {% icon "bell" %}
+            {% if has_unseen_notifications %}<span id="notif-dot" class="notif-dot"><span class="sr-only">{% translate "New" %}</span></span>{% endif %}
+          </button>
+          <div class="dropdown" x-show="open" x-cloak x-transition.opacity>
+            <div class="dropdown-head">
+              <p class="card-title">{% translate "Notifications" %}</p>
+              <span class="meta">{% translate "Last 7 days" %}</span>
+            </div>
+            <div id="notif-body" class="dropdown-body">
+              <div class="p-4 space-y-3"><span class="skeleton h-4 w-3/4"></span><span class="skeleton h-4 w-1/2"></span><span class="skeleton h-4 w-2/3"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" class="flex-1">
+{% else %}
+<main id="main">
+{% endif %}
+{% block content %}{% endblock %}
+</main>
+{% if nav %}
+  </div>
+</div>
+{% endif %}
+
+{% if messages %}
+  <div class="toast-stack" aria-live="polite">
+    {% for message in messages %}
+      <div role="status" x-data="{ show: true }" x-show="show"
+           {% if message.level_tag != 'error' %}x-init="setTimeout(() => show = false, 6000)"{% endif %}
+           class="toast {% if message.level_tag == 'error' %}is-error{% else %}is-success{% endif %}">
+        {% if message.level_tag == 'error' %}{% icon "triangle-alert" class="text-danger" %}{% else %}{% icon "circle-check" class="text-success" %}{% endif %}
+        <span class="flex-1">{{ message }}</span>
+        <button type="button" class="btn btn-icon is-bare" @click="show = false" aria-label="{% translate 'Dismiss' %}">{% icon "x" size=16 %}</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+</body>
+</html>

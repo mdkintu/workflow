@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Shifts" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  {% include "organisations/_setup_tabs.html" with tab="shifts" %}
+  <ul class="list mb-8">
+    {% for shift in shifts %}
+      <li class="list-row">
+        {% icon "clock" class="text-faint" %}
+        <div class="flex-1 min-w-0">
+          <p class="row-title">{{ shift.name }} <span class="text-muted font-normal">· {{ shift.location.name }}</span></p>
+          <p class="row-meta"><span class="mono">{{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }}</span><span>{{ shift.day_names|join:" " }}</span></p>
+        </div>
+      </li>
+    {% empty %}
+      <li class="empty-state">
+        <span class="empty-icon">{% icon "clock" %}</span>
+        <p class="empty-title">{% translate "No shifts yet." %}</p>
+      </li>
+    {% endfor %}
+  </ul>
+  <div class="card">
+    <h2 class="card-title mb-4">{% icon "plus" %}{% translate "Add a shift" %}</h2>
+    {% if form.errors %}<p role="alert" class="alert alert-danger mb-4">{% icon "triangle-alert" %}<span>{% for field in form %}{% for e in field.errors %}{{ e }} {% endfor %}{% endfor %}</span></p>{% endif %}
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+      <div>
+        <label for="id_shift_location" class="label">{% translate "Location" %}</label>
+        <select id="id_shift_location" name="location" required class="input">
+          {% for loc in form.fields.location.queryset %}<option value="{{ loc.id }}">{{ loc.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="id_shift_name" class="label">{% translate "Shift name" %}</label>
+        <input type="text" id="id_shift_name" name="name" maxlength="60" required placeholder="{% translate 'Name, e.g. Morning' %}" class="input">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label for="id_start_time" class="label">{% translate "Starts" %}</label><input type="time" id="id_start_time" name="start_time" required class="input"></div>
+        <div><label for="id_end_time" class="label">{% translate "Ends" %}</label><input type="time" id="id_end_time" name="end_time" required class="input"></div>
+      </div>
+      <fieldset>
+        <legend class="label">{% translate "Days" %}</legend>
+        <div class="flex flex-wrap gap-x-4">
+          {% for value, label in form.fields.weekdays.choices %}
+            <label class="check"><input type="checkbox" name="weekdays" value="{{ value }}" {% if value < 5 %}checked{% endif %}> {{ label }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <button type="submit" class="btn btn-primary btn-block">{% icon "plus" %}{% translate "Add shift" %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

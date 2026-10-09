@@ -1,0 +1,24 @@
+{% load i18n ui %}
+<ul class="space-y-1">
+  {% for person in cell.assigned %}
+    <li class="flex items-center justify-between gap-1">
+      <span class="inline-flex items-center gap-2 min-w-0"><span class="avatar avatar-xs">{{ person.name|initials }}</span><span class="truncate">{{ person.name }}</span></span>
+      {% if cell.can_edit %}
+        <form hx-post="{% url 'roster:cell' %}" hx-target="closest td" hx-swap="innerHTML">
+          <input type="hidden" name="shift" value="{{ cell.shift.id }}"><input type="hidden" name="date" value="{{ cell.day|date:'Y-m-d' }}">
+          <input type="hidden" name="membership" value="{{ person.id }}"><input type="hidden" name="op" value="remove">
+          <button type="submit" class="btn btn-icon is-bare text-faint" aria-label="{% blocktranslate with name=person.name %}Remove {{ name }}{% endblocktranslate %}">{% icon "x" size=16 %}</button>
+        </form>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+{% if cell.can_edit and cell.addable %}
+  <form hx-post="{% url 'roster:cell' %}" hx-target="closest td" hx-swap="innerHTML" hx-trigger="change" class="mt-1">
+    <input type="hidden" name="shift" value="{{ cell.shift.id }}"><input type="hidden" name="date" value="{{ cell.day|date:'Y-m-d' }}"><input type="hidden" name="op" value="add">
+    <select name="membership" class="input input-compact w-full" aria-label="{% translate 'Add someone' %}">
+      <option value="">+ {% translate "Add" %}</option>
+      {% for person in cell.addable %}<option value="{{ person.id }}">{{ person.name }}</option>{% endfor %}
+    </select>
+  </form>
+{% endif %}

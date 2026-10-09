@@ -1,0 +1,28 @@
+{% load i18n ui %}
+{# F5.6: the bell's dropdown. Loading it marks the list seen and clears the red dot. #}
+<div hx-post="{% url 'notifications:seen' %}" hx-trigger="load" hx-swap="none"
+     hx-on::after-request="var d = document.getElementById('notif-dot'); if (d) d.remove();"></div>
+{% if items %}
+  <ul>
+    {% for item in items %}
+      <li class="notif-item {% if item.is_new %}is-new{% endif %}" data-testid="notification">
+        <span class="{% if item.kind == 'overdue' or item.kind == 'escalation' %}text-danger{% elif item.kind == 'flag' or item.kind == 'rejected' %}text-warning{% else %}text-faint{% endif %}">{% icon item.icon size=18 %}</span>
+        <div class="min-w-0 flex-1">
+          <p class="flex items-center gap-2">
+            <span class="font-semibold text-heading">{{ item.get_kind_display }}</span>
+            {% if item.is_new %}<span class="status-dot dot-danger"><span class="sr-only">{% translate "New" %}</span></span>{% endif %}
+          </p>
+          <p class="text-body break-words">{{ item.body }}</p>
+          <p class="meta mt-1">{% icon "clock" size=12 %}{{ item.created_at|date:"D j M, H:i" }} · {{ item.get_channel_display }}
+            {% if item.url %}· <a href="{{ item.url }}" class="link">{% translate "Open" %}</a>{% endif %}</p>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="empty-state py-8">
+    <span class="empty-icon">{% icon "bell" %}</span>
+    <p class="empty-title">{% translate "All caught up" %}</p>
+    <p class="empty-text">{% translate "Reminders and alerts sent to you show up here." %}</p>
+  </div>
+{% endif %}

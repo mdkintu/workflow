@@ -1,0 +1,50 @@
+{% load i18n ui %}
+<section aria-labelledby="trend-title" class="card space-y-4">
+  <h2 id="trend-title" class="card-title">{% icon "layout-dashboard" %}{% translate "Completion rate" %}</h2>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="card card-compact stat">
+      <span class="stat-value">{% if trend.rate_7 is not None %}{{ trend.rate_7 }}%{% else %}—{% endif %}</span>
+      <span class="stat-label">{% translate "Completion, last 7 days" %}</span>
+      {% if trend.on_time_7 is not None %}<span class="stat-note">{% blocktranslate with n=trend.on_time_7 %}{{ n }}% on time{% endblocktranslate %}</span>{% endif %}
+    </div>
+    <div class="card card-compact stat">
+      <span class="stat-value">{% if trend.rate_30 is not None %}{{ trend.rate_30 }}%{% else %}—{% endif %}</span>
+      <span class="stat-label">{% translate "Completion, last 30 days" %}</span>
+      {% if trend.on_time_30 is not None %}<span class="stat-note">{% blocktranslate with n=trend.on_time_30 %}{{ n }}% on time{% endblocktranslate %}</span>{% endif %}
+    </div>
+  </div>
+
+  <figure class="max-w-lg">
+    <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="w-full h-auto" role="img"
+         aria-labelledby="trend-title trend-desc">
+      <desc id="trend-desc">{% translate "Share of tasks and checklists done, per day, for the last 30 days. Days with nothing due are left empty." %}</desc>
+      <rect x="{{ chart.window_x }}" y="0" width="{{ chart.window_w }}" height="{{ chart.base }}" class="chart-window"></rect>
+      {% for line in chart.grid %}
+        <line x1="{{ chart.left }}" x2="{{ chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}" class="chart-grid" stroke-width="0.5"></line>
+        <text x="{{ chart.axis_label_x }}" y="{{ line.label_y }}" font-size="{{ chart.font }}" class="chart-label" text-anchor="end">{{ line.label }}</text>
+      {% endfor %}
+      <line x1="{{ chart.left }}" x2="{{ chart.width }}" y1="{{ chart.base }}" y2="{{ chart.base }}" class="chart-axis" stroke-width="0.5"></line>
+      {% for col in chart.columns %}
+        {% if col.gap %}
+          <rect x="{{ col.x }}" y="0" width="{{ col.w }}" height="{{ chart.base }}" fill="transparent"><title>{{ col.title }}</title></rect>
+        {% else %}
+          <path d="{{ col.path }}" class="chart-bar"><title>{{ col.title }}</title></path>
+        {% endif %}
+      {% endfor %}
+      <text x="{{ chart.left }}" y="{{ chart.label_y }}" font-size="{{ chart.font }}" class="chart-label">{{ chart.first_label }}</text>
+      <text x="{{ chart.width }}" y="{{ chart.label_y }}" font-size="{{ chart.font }}" class="chart-label" text-anchor="end">{{ chart.last_label }}</text>
+    </svg>
+    <figcaption class="help">{% translate "Done out of everything due each day (cancelled work left out); the shaded part is the last 7 days. Hover a column for the numbers." %}</figcaption>
+  </figure>
+  <details>
+    <summary class="btn btn-ghost -ml-2">{% translate "Show as a table" %}</summary>
+    <div class="table-wrap mt-2"><table class="table">
+      <thead><tr><th scope="col">{% translate "Day" %}</th><th scope="col" class="num">{% translate "Done" %}</th><th scope="col" class="num">{% translate "Due" %}</th><th scope="col" class="num">%</th></tr></thead>
+      <tbody>
+        {% for point in trend.series reversed %}
+          <tr><th scope="row">{{ point.day|date:"D j M" }}</th><td class="num">{{ point.done }}</td><td class="num">{{ point.total }}</td><td class="num">{% if point.rate is not None %}{{ point.rate }}{% else %}—{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </details>
+</section>

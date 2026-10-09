@@ -1,0 +1,1 @@
+{{ staff_name|truncatechars:20 }} flagged {{ task_title|truncatechars:30 }}: {{ reason|truncatechars:40 }}. {{ site_url }}

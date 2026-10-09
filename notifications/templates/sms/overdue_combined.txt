@@ -1,0 +1,1 @@
+{{ count }} tasks overdue at {{ location_name|truncatechars:30 }}, the first was due {{ due_time }}. {{ site_url }}

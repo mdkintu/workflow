@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "New checklist" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% url 'checklists:templates' %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "Back" %}</a>
+  <div class="page-header mt-2">
+    <div>
+      <h1 class="page-title">{% translate "New checklist" %}</h1>
+      <p class="page-desc">{% translate "Name it and choose where it happens; add items next." %}</p>
+    </div>
+  </div>
+  <form method="post" class="card space-y-5">
+    {% csrf_token %}
+    {% include "checklists/_template_fields.html" %}
+    <button type="submit" class="btn btn-primary btn-block">{% translate "Create, then add items" %}{% icon "chevron-right" size=18 %}</button>
+  </form>
+</div>
+{% endblock %}

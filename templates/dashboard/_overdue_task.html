@@ -1,0 +1,23 @@
+{% load i18n ui %}
+<li class="px-4 py-3" id="overdue-{{ task.id }}">
+  <div class="flex items-start justify-between gap-3">
+    <a href="{% url 'tasks:detail' task.id %}" class="row-title link">{{ task.title }}</a>
+    {% if just_reassigned %}<span class="badge badge-success">{% icon "check" size=12 %}{% translate "Reassigned" %}</span>{% endif %}
+  </div>
+  <p class="row-meta">
+    <span>{% icon "map-pin" size=14 %}{{ task.location.name }}</span>
+    <span>{% icon "user" size=14 %}{{ task.assignee_label }}</span>
+    <span>{% icon "clock" size=14 %}{% translate "due" %} {{ task.due_at|date:"D H:i" }}</span>
+  </p>
+  {% if can_reassign %}
+    <form class="flex gap-2 mt-3" method="post" action="{% url 'dashboard:reassign' task.id %}"
+          hx-post="{% url 'dashboard:reassign' task.id %}" hx-target="#overdue-{{ task.id }}" hx-swap="outerHTML">
+      {% csrf_token %}
+      <select name="membership" required class="input flex-1" aria-label="{% translate 'Reassign to' %}">
+        <option value="">{% translate "Reassign to…" %}</option>
+        {% for person in people %}<option value="{{ person.id }}">{{ person.name }}{% if person.on_shift %} · {% translate "on shift" %}{% endif %}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-secondary">{% translate "Reassign" %}</button>
+    </form>
+  {% endif %}
+</li>

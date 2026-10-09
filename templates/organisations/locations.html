@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Locations" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  {% include "organisations/_setup_tabs.html" with tab="locations" %}
+  <ul class="list mb-6">
+    {% for location in locations %}
+      <li class="list-row {% if not location.is_active %}opacity-60{% endif %}">
+        {% icon "map-pin" class="text-faint" %}
+        <span class="flex-1 row-title">{{ location.name }}</span>
+        {% if not location.is_active %}<span class="badge badge-neutral">{% translate "Inactive" %}</span>{% endif %}
+      </li>
+    {% empty %}
+      <li class="empty-state">
+        <span class="empty-icon">{% icon "map-pin" %}</span>
+        <p class="empty-title">{% translate "No locations yet." %}</p>
+        <p class="empty-text">{% translate "Add the places where work happens, e.g. Restaurant or Front desk." %}</p>
+      </li>
+    {% endfor %}
+  </ul>
+  <form method="post" class="card card-compact">
+    {% csrf_token %}
+    <label for="id_loc_name" class="label">{% translate "Location name" %}</label>
+    <div class="flex gap-2">
+      <input type="text" id="id_loc_name" name="name" maxlength="80" required placeholder="{% translate 'New location, e.g. Restaurant' %}" class="input flex-1 {% if form.name.errors %}is-error{% endif %}">
+      <button type="submit" class="btn btn-primary">{% icon "plus" %}{% translate "Add" %}</button>
+    </div>
+    {% for e in form.name.errors %}<p role="alert" class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,1 @@
+WorkFlow has sent {{ used }} of {{ cap }} SMS this month. At the limit only alerts to managers go out. {{ site_url }}

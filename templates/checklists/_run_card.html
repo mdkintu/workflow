@@ -1,0 +1,17 @@
+{% load i18n ui %}
+<li>
+  <a href="{% url 'checklists:run' run.id %}" class="card card-compact card-link flex items-start gap-3">
+    <span class="mt-0.5 text-faint">{% icon "list-checks" %}</span>
+    <span class="flex-1 min-w-0">
+      <span class="flex items-start justify-between gap-3">
+        <span class="row-title">{{ run.name }}</span>
+        {% include "tasks/_status.html" with task=run %}
+      </span>
+      <span class="row-meta">
+        <span class="tabular-nums">{% icon "check" size=14 %}{{ run.resolved_count }} / {{ run.item_count }} {% translate "done" %}</span>
+        <span>{% icon "map-pin" size=14 %}{{ run.location.name }}{% if run.shift %} · {{ run.shift.name }}{% endif %}</span>
+        <span>{% icon "clock" size=14 %}{{ run.due_at|date:"D H:i" }}</span>
+      </span>
+    </span>
+  </a>
+</li>

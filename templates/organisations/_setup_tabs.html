@@ -1,0 +1,11 @@
+{% load i18n ui %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{% translate "Setup" %}</h1>
+    <p class="page-desc">{% translate "Locations and the shifts people work there." %}</p>
+  </div>
+</div>
+<nav class="tabs" aria-label="{% translate 'Setup' %}">
+  <a href="{% url 'organisations:locations' %}" class="tab" {% if tab == 'locations' %}aria-current="page"{% endif %}>{% icon "map-pin" size=18 %}{% translate "Locations" %}</a>
+  <a href="{% url 'organisations:shifts' %}" class="tab" {% if tab == 'shifts' %}aria-current="page"{% endif %}>{% icon "clock" size=18 %}{% translate "Shifts" %}</a>
+</nav>

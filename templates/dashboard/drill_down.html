@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Dashboard" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% url 'dashboard:dashboard' %}?range={{ period.key }}&loc={{ location_id|default:'' }}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "Dashboard" %}</a>
+  <div class="page-header mt-2">
+    <div>
+      <h1 class="page-title">{{ bucket|capfirst }}</h1>
+      <p class="page-desc">{{ period.label }}</p>
+    </div>
+  </div>
+  <ul class="space-y-2">
+    {% for task in tasks %}{% include "tasks/_task_card.html" %}{% endfor %}
+    {% for run in runs %}{% include "checklists/_run_card.html" %}{% endfor %}
+    {% if not tasks and not runs %}
+      <li class="card empty-state">
+        <span class="empty-icon">{% icon "inbox" %}</span>
+        <p class="empty-title">{% translate "Nothing here." %}</p>
+      </li>
+    {% endif %}
+  </ul>
+</div>
+{% endblock %}

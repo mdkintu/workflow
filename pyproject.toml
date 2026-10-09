@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = [
+  "workflow*", "accounts*", "organisations*", "tasks*", "checklists*",
+  "notifications*", "dashboard*", "sync*",
+]
+
+[project]
+name = "workflow"
+version = "0.1.0"
+description = "WorkFlow: task and checklist tool for frontline and on-site teams"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "django==5.2.17",
+  "djangorestframework==3.16.1",
+  "django-environ==0.12.1",
+  "psycopg[binary]==3.2.13",
+  "celery==5.5.3",
+  "redis==5.3.1",
+  "pillow==11.3.0",
+  "gunicorn==23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.4.2",
+  "pytest-django==4.11.1",
+  "factory-boy==3.3.3",
+  "ruff==0.9.6",
+  "pytest-playwright==0.5.2",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+  "*/migrations/*",
+  ".venv",
+  "bin",
+  "backups",
+  "node_modules",
+  "frontend/vendor",
+  "build",  # setuptools output from `pip install .` inside the image
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ", "S"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+  "workflow", "accounts", "organisations", "tasks", "checklists",
+  "notifications", "dashboard", "sync",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "workflow.settings.dev"
+python_files = ["test_*.py"]
+addopts = "-m 'not e2e'"
+markers = [
+  "e2e: end-to-end Playwright tests (slower, run with -m e2e)",
+]
+testpaths = ["tests", "accounts", "organisations", "tasks", "checklists", "notifications", "dashboard", "sync"]

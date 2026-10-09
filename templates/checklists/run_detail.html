@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{{ run.name }}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% url 'tasks:my' %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "Back" %}</a>
+  <div class="page-header mt-2 mb-4">
+    <div class="min-w-0">
+      <h1 class="page-title">{{ run.name }}</h1>
+      <p class="row-meta mt-2">
+        <span>{% icon "clock" size=14 %}{% translate "Due" %} {{ run.due_at|date:"D j M, H:i" }}</span>
+        <span>{% icon "map-pin" size=14 %}{{ run.location.name }}{% if run.shift %} · {{ run.shift.name }}{% endif %}</span>
+      </p>
+    </div>
+  </div>
+  <div id="run-panel" class="card">{% include "checklists/_run_panel.html" %}</div>
+  <div id="comments" class="card mt-6">{% include "tasks/_comments.html" %}</div>
+</div>
+{% endblock %}

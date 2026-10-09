@@ -1,0 +1,26 @@
+{% load i18n ui %}
+<section>
+  <h3 class="card-title mb-3">{% icon "message-square" size=18 %}{% translate "Comments" %} <span class="count-chip" x-text="comments.length"></span></h3>
+  <ul class="space-y-3 mb-3">
+    <template x-for="c in comments" :key="c.id">
+      <li data-testid="comment" class="comment" :class="c.is_flag && 'is-flag'">
+        <div class="comment-body">
+          <p>
+            <span class="font-semibold text-heading" x-text="c.author"></span>
+            <span class="meta" x-text="time(c.time)"></span>
+            <span x-show="c.pending" class="text-warning">{% icon "refresh-cw" size=14 %}</span>
+            <span x-show="c.is_flag" class="text-warning">{% icon "flag" size=14 %}</span>
+          </p>
+          <p x-show="!c.hidden" x-text="c.body"></p>
+          <em x-show="c.hidden" class="text-faint">{% translate "Hidden by a manager" %}</em>
+          <button type="button" x-show="c.deletable" @click="deleteComment(c)" class="btn btn-danger-ghost btn-sm -ml-2">{% icon "trash-2" size=16 %}{% translate "Delete" %}</button>
+        </div>
+      </li>
+    </template>
+  </ul>
+  <form @submit.prevent="addComment()" class="flex gap-2">
+    <input x-model="commentBody" maxlength="1000" class="input flex-1"
+           placeholder="{% translate 'Write a comment…' %}" aria-label="{% translate 'Comment' %}">
+    <button type="submit" class="btn btn-primary">{% icon "send" size=18 %}{% translate "Send" %}</button>
+  </form>
+</section>

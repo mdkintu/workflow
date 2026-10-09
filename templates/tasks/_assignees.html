@@ -1,0 +1,27 @@
+{% load i18n %}
+<div id="assignees" class="space-y-5">
+  <div x-show="assign === 'person'">
+    <label for="id_assignee_membership" class="label">{% translate "Person" %}</label>
+    <select name="assignee_membership" id="id_assignee_membership" class="input">
+      <option value="">—</option>
+      {% for person in people %}
+        <option value="{{ person.id }}" {% if person.id|stringformat:"s" == selected_person %}selected{% endif %}>
+          {{ person.name }}{% if person.on_shift %} · {% translate "on shift" %}{% endif %}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div x-show="assign === 'shift'">
+    <label for="id_assignee_shift" class="label">{% translate "Shift" %}</label>
+    <select name="assignee_shift" id="id_assignee_shift" class="input">
+      <option value="">—</option>
+      {% for shift in shifts %}
+        <option value="{{ shift.id }}" {% if shift.id|stringformat:"s" == selected_shift %}selected{% endif %}>
+          {{ shift.name }} ({{ shift.start_time|time:"H:i" }}–{{ shift.end_time|time:"H:i" }})
+        </option>
+      {% empty %}
+        <option value="" disabled>{% translate "No shifts at this location" %}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>

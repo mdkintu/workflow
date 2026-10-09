@@ -1,0 +1,22 @@
+.git/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+backups/
+bin/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+node_modules/
+docs/
+*.md
+.dockerignore
+docker-compose.yml
+# Dev-mode (make dev) uploads and collectstatic output: never bake into the image.
+mediafiles/
+staticfiles/
+build/
+*.egg-info/

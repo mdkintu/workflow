@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Device setup" %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card card">
+    <span class="empty-icon mb-4">{% icon "lock" %}</span>
+    <h1 class="page-title mb-6">{% translate "Set up this device" %}</h1>
+    <ol class="list-decimal ml-5 space-y-4">
+      <li>
+        {% translate "Download and install the WorkFlow root certificate." %}
+        <a href="#" class="link block mt-1">{% translate "Download certificate (TODO)" %}</a>
+      </li>
+      <li>{% translate "Install it: Settings → Security → Encryption & credentials → Install a certificate → CA certificate." %}</li>
+      <li>{% translate "Open the app and add it to your home screen." %}</li>
+    </ol>
+  </div>
+</div>
+{% endblock %}

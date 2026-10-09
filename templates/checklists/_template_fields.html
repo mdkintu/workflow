@@ -1,0 +1,21 @@
+{% load i18n ui %}
+<div>
+  <label for="id_name" class="label">{% translate "Name" %} *</label>
+  <input type="text" name="name" id="id_name" maxlength="120" required value="{{ form.name.value|default:'' }}" placeholder="{% translate 'e.g. Opening checklist — Bar' %}" class="input {% if form.name.errors %}is-error{% endif %}">
+  {% for e in form.name.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+</div>
+<div>
+  <label for="id_location" class="label">{% translate "Location" %} *</label>
+  <select name="location" id="id_location" required {% if template %}disabled{% endif %} class="input">
+    {% for loc in form.fields.location.queryset %}<option value="{{ loc.id }}" {% if loc.id|stringformat:"s" == form.location.value|stringformat:"s" %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
+  </select>
+  {% if template %}<input type="hidden" name="location" value="{{ template.location_id }}">{% endif %}
+</div>
+<div>
+  <label for="id_shift" class="label">{% translate "Shift" %}</label>
+  <select name="shift" id="id_shift" class="input {% if form.shift.errors %}is-error{% endif %}">
+    <option value="">{% translate "Anyone at the location" %}</option>
+    {% for shift in form.fields.shift.queryset %}<option value="{{ shift.id }}" {% if shift.id|stringformat:"s" == form.shift.value|stringformat:"s" %}selected{% endif %}>{{ shift.name }} ({{ shift.location.name }})</option>{% endfor %}
+  </select>
+  {% for e in form.shift.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+</div>

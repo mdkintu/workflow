@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Roster" %}{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "Roster" %}</h1>
+      <p class="page-desc">{% translate "Who works which shift this week." %}</p>
+    </div>
+    {% if can_edit and location %}
+      <form method="post" action="{% url 'roster:copy-week' %}">
+        {% csrf_token %}<input type="hidden" name="week" value="{{ week }}"><input type="hidden" name="loc" value="{{ location.id }}">
+        <button type="submit" class="btn btn-secondary">{% icon "copy" %}{% translate "Copy last week" %}</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-label">{% icon "filter" size=16 %}{% translate "Filters:" %}</span>
+    <form method="get">
+      <input type="hidden" name="week" value="{{ week }}">
+      <select name="loc" onchange="this.form.submit()" class="input" aria-label="{% translate 'Location' %}">
+        {% for loc in locations %}<option value="{{ loc.id }}" {% if loc == location %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
+      </select>
+    </form>
+    <div class="flex items-center gap-1 ml-auto">
+      <a href="?week={{ previous_week }}&loc={{ location.id }}" class="btn btn-icon is-bare" aria-label="{% translate 'Previous week' %}">{% icon "chevron-left" %}</a>
+      <span class="chip">{{ days.0|date:"j M" }} – {{ days.6|date:"j M" }}</span>
+      <a href="?week={{ next_week }}&loc={{ location.id }}" class="btn btn-icon is-bare" aria-label="{% translate 'Next week' %}">{% icon "chevron-right" %}</a>
+    </div>
+  </div>
+
+  {% if overlaps %}
+    <div role="alert" class="alert alert-warning mb-4">
+      {% icon "triangle-alert" %}
+      <ul class="space-y-1">
+        {% for o in overlaps %}
+          <li>{% blocktranslate with name=o.membership.name day=o.day|date:"D j M" a=o.first.name b=o.second.name %}{{ name }} is on overlapping shifts on {{ day }} ({{ a }}, {{ b }}).{% endblocktranslate %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="sticky-col">{% translate "Shift" %}</th>
+            {% for day in days %}<th>{{ day|date:"D j" }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <th scope="row" class="sticky-col whitespace-nowrap"><span class="font-semibold text-heading">{{ row.shift.name }}</span><br><span class="mono text-faint text-[13px]">{{ row.shift.start_time|time:"H:i" }}–{{ row.shift.end_time|time:"H:i" }}</span></th>
+              {% for cell in row.cells %}<td class="min-w-[9rem]">{% include "organisations/_roster_cell.html" %}</td>{% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card empty-state">
+      <span class="empty-icon">{% icon "calendar-days" %}</span>
+      <p class="empty-title">{% translate "No shifts at this location yet." %}</p>
+      {% if can_edit %}<a href="{% url 'organisations:shifts' %}" class="btn btn-primary mt-2">{% icon "plus" %}{% translate "Add one" %}</a>{% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

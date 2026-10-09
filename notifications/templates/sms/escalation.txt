@@ -1,0 +1,1 @@
+Still not done: {{ task_title|truncatechars:35 }} at {{ location_name|truncatechars:20 }}, due {{ due_time }}. {{ site_url }}

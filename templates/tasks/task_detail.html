@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{{ task.title }}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% url 'tasks:my' %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "Back" %}</a>
+  <div class="page-header mt-2 mb-4">
+    <div class="min-w-0">
+      <h1 class="page-title">{{ task.title }}</h1>
+      <p class="row-meta mt-2">
+        <span>{% icon "map-pin" size=14 %}{{ task.location.name }}</span>
+        <span>{% icon "user" size=14 %}{{ task.assignee_label }}</span>
+      </p>
+    </div>
+  </div>
+  {% if task.description %}<p class="whitespace-pre-line mb-6">{{ task.description }}</p>{% endif %}
+  <div id="task-panel" class="card">{% include "tasks/_panel.html" %}</div>
+  <div id="comments" class="card mt-6">{% include "tasks/_comments.html" %}</div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Choose organisation" %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1 class="page-title">{% translate "Choose an organisation" %}</h1>
+    <p class="page-desc mb-6">{% translate "You belong to more than one. You can switch later." %}</p>
+    <form method="post" class="space-y-3">
+      {% csrf_token %}
+      {% for membership in memberships %}
+        <button type="submit" name="membership_id" value="{{ membership.id }}" class="card card-compact card-link w-full text-left flex items-center gap-3">
+          <span class="brand-tile" aria-hidden="true">{{ membership.organisation.name|initials }}</span>
+          <span class="flex-1 font-semibold text-heading">{{ membership.organisation.name }}</span>
+          {% icon "chevron-right" class="text-faint" %}
+        </button>
+      {% empty %}
+        <div class="card empty-state">
+          <span class="empty-icon">{% icon "building-2" %}</span>
+          <p class="empty-title">{% translate "No organisations" %}</p>
+          <p class="empty-text">{% translate "You have no organisation memberships." %}</p>
+        </div>
+      {% endfor %}
+    </form>
+  </div>
+</div>
+{% endblock %}

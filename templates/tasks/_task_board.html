@@ -1,0 +1,45 @@
+{% load i18n ui %}
+{# F1.6 task board. Cards move forward only through the existing transitions (ADR-21). #}
+<div id="task-board" class="kanban">
+  {% for col in columns %}
+    <section class="kanban-col" aria-labelledby="col-{{ col.status }}">
+      <header class="kanban-head">
+        <span class="status-dot {{ col.dot }}"></span>
+        <h2 id="col-{{ col.status }}" class="kanban-title">{{ col.label }}</h2>
+        <span class="count-chip">{{ col.tasks|length }}</span>
+      </header>
+      {% for task in col.tasks %}
+        <article class="task-card" data-testid="board-card">
+          <div class="task-card-top">
+            <span class="badge badge-neutral">{% icon "map-pin" size=12 %}{{ task.location.name }}</span>
+            {% if task.is_overdue or task.status == "flagged" or task.status == "done" %}{% include "tasks/_status.html" %}{% endif %}
+          </div>
+          <h3 class="task-card-title"><a href="{% url 'tasks:detail' task.id %}">{{ task.title }}</a></h3>
+          {% if task.description %}<p class="task-card-desc">{{ task.description }}</p>{% endif %}
+          <div class="task-card-foot">
+            <span class="who"><span class="avatar avatar-xs">{{ task.assignee_label|initials }}</span><span class="truncate">{{ task.assignee_label }}</span></span>
+            <span class="meta">{% icon "calendar" size=14 %}{{ task.due_at|date:"D H:i" }}</span>
+            {% if task.photo_required %}<span class="meta" title="{% translate 'Photo required' %}">{% icon "camera" size=14 %}<span class="sr-only">{% translate "Photo required" %}</span></span>{% endif %}
+            <span class="task-card-actions">
+              {% if task.can_send_back %}
+                <a href="{% url 'tasks:detail' task.id %}" class="btn btn-ghost btn-sm">{% icon "chevron-left" size=16 %}{% translate "Send back" %}</a>
+              {% endif %}
+              {% if task.next_action %}
+                <form method="post" action="{% url 'tasks:'|add:task.next_action task.id %}">
+                  {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-ghost btn-sm">
+                    {% if task.next_action == "start" %}{% translate "Start" %}{% elif task.next_action == "complete" %}{% translate "Mark done" %}{% else %}{% translate "Resolve" %}{% endif %}{% icon "chevron-right" size=16 %}
+                  </button>
+                </form>
+              {% elif task.needs_photo %}
+                <a href="{% url 'tasks:detail' task.id %}" class="btn btn-ghost btn-sm">{% icon "camera" size=16 %}{% translate "Add photo" %}</a>
+              {% endif %}
+            </span>
+          </div>
+        </article>
+      {% empty %}
+        <p class="kanban-empty">{% translate "Nothing here." %}</p>
+      {% endfor %}
+    </section>
+  {% endfor %}
+</div>

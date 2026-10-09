@@ -1,0 +1,1 @@
+Reminder: {{ task_title|truncatechars:40 }} due {{ due_time }} at {{ location_name|truncatechars:25 }}. {{ site_url }}

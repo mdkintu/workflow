@@ -1,0 +1,71 @@
+{% load i18n ui %}
+<div class="space-y-6">
+  <section aria-label="{% translate 'Counts' %}">
+    <div class="stat-grid">
+      {% translate "Done" as l_done %}{% translate "Overdue" as l_over %}{% translate "Flagged" as l_flag %}{% translate "Open" as l_open %}
+      {% include "dashboard/_tile.html" with bucket="done" value=counts.done label=l_done dot="dot-success" late=counts.done_late %}
+      {% include "dashboard/_tile.html" with bucket="overdue" value=counts.overdue label=l_over dot="dot-danger" late=0 %}
+      {% include "dashboard/_tile.html" with bucket="flagged" value=counts.flagged label=l_flag dot="dot-warning" late=0 %}
+      {% include "dashboard/_tile.html" with bucket="open" value=counts.open label=l_open dot="dot-idle" late=0 %}
+    </div>
+    <p class="meta mt-3">{% icon "clock" size=14 %}{{ period.label }} · {% translate "Updated" %} {{ updated_at|time:"H:i" }}</p>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title mb-4"><span class="status-dot dot-danger"></span>{% translate "Overdue" %} <span class="count-chip">{{ overdue_count }}</span></h2>
+    <ul class="list">
+      {% for task in overdue.tasks %}{% include "dashboard/_overdue_task.html" %}{% endfor %}
+      {% for run in overdue.runs %}
+        <li class="px-4 py-3">
+          <a href="{% url 'checklists:run' run.id %}" class="row-title link">{{ run.name }}</a>
+          <p class="row-meta">
+            <span>{% icon "map-pin" size=14 %}{{ run.location.name }}{% if run.shift %} · {{ run.shift.name }}{% endif %}</span>
+            <span>{% icon "clock" size=14 %}{% translate "due" %} {{ run.due_at|date:"D H:i" }}</span>
+            <span class="tabular-nums">{% icon "list-checks" size=14 %}{{ run.resolved_count }} / {{ run.item_count }}</span>
+          </p>
+        </li>
+      {% endfor %}
+      {% if not overdue.tasks and not overdue.runs %}
+        <li class="empty-state py-8">
+          <span class="empty-icon">{% icon "circle-check" %}</span>
+          <p class="empty-title">{% translate "Nothing overdue." %}</p>
+        </li>
+      {% endif %}
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="section-title"><span class="section-label">{% translate "By" %} {{ group_label|lower }}</span></h2>
+    {% if rows %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">{% translate "Name" %}</th>
+              <th scope="col" class="num">{% translate "Done" %}</th>
+              <th scope="col" class="num">{% translate "Overdue" %}</th>
+              <th scope="col" class="num">{% translate "Flagged" %}</th>
+              <th scope="col" class="num">{% translate "Open" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <th scope="row" class="text-heading">{{ row.label }}</th>
+                <td class="num">{{ row.done }}{% if row.done_late %} <span class="text-faint text-[13px]">({{ row.done_late }} {% translate "late" %})</span>{% endif %}</td>
+                <td class="num">{% if row.overdue %}<span class="status-dot dot-danger mr-1" aria-hidden="true"></span>{% endif %}{{ row.overdue }}</td>
+                <td class="num">{{ row.flagged }}</td>
+                <td class="num">{{ row.open }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card empty-state">
+        <span class="empty-icon">{% icon "inbox" %}</span>
+        <p class="empty-title">{% translate "Nothing due in this period." %}</p>
+      </div>
+    {% endif %}
+  </section>
+</div>

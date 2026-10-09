@@ -1,0 +1,1 @@
+Your work on {{ task_title|truncatechars:40 }} was rejected: {{ reason|truncatechars:40 }}. {{ site_url }}

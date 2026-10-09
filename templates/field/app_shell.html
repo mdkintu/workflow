@@ -1,0 +1,383 @@
+<!doctype html>
+{% load static i18n ui %}{% get_current_language as LANG %}
+<html lang="{{ LANG }}" data-version="{{ version }}">
+{% comment %}
+  The staff field app (docs/04-design.md §3, S4-S6). The service worker
+  caches this page, so it must hold no personal data: who is logged in comes
+  from /api/sync/me (or its last copy), everything else from the local store.
+  Styling: the design system in frontend/tailwind/input.css (ADR-19); icons
+  are inlined here by {% templatetag openblock %} icon {% templatetag closeblock %} (ADR-20), so they work offline.
+{% endcomment %}
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% translate "WorkFlow" %}</title>
+  <link rel="manifest" href="{% url 'manifest' %}">
+  <link rel="icon" href="{% static 'icons/icon-192.png' %}">
+  {% include "_head.html" %}
+  {{ strings|json_script:"wf-strings" }}
+  <script src="{% static 'vendor/dexie.min.js' %}" defer></script>
+  <script src="{% static 'field/db.js' %}" defer></script>
+  <script src="{% static 'field/photo.js' %}" defer></script>
+  <script src="{% static 'field/sync.js' %}" defer></script>
+  <script src="{% static 'field/app.js' %}" defer></script>
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () { navigator.serviceWorker.register("/sw.js"); });
+    }
+  </script>
+</head>
+<body>
+<div x-data="field" x-cloak class="field-shell">
+
+  <header class="field-top">
+    <template x-if="route.name === 'home' || route.name === 'shifts' || route.name === 'me' || route.name === 'problems'">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <h1 class="font-semibold truncate text-heading" x-text="me ? me.organisation.name : '{{ _("WorkFlow")|escapejs }}'"></h1>
+      </div>
+    </template>
+    <template x-if="route.name === 'task' || route.name === 'run'">
+      <a href="#/" class="back-link flex-1">{% icon "arrow-left" size=18 %}{% translate "Back" %}</a>
+    </template>
+    <span data-testid="net" class="status-pill" :class="isOnline() ? '' : 'is-offline'">
+      <span class="status-dot" :class="isOnline() ? 'dot-success' : 'dot-idle'"></span>
+      <span x-text="isOnline() ? T.online : T.offline"></span>
+    </span>
+    <a data-testid="sync-badge" :href="(sync.problems || sync.status === 'error') ? '#/problems' : (needLogin ? '{% url 'accounts:login' %}' : '#/me')"
+       class="status-pill min-h-[44px]" :class="badge().cls">
+      <span x-show="badge().icon === 'ok'">{% icon "check" size=16 %}</span>
+      <span x-show="badge().icon === 'sync'">{% icon "refresh-cw" size=16 %}</span>
+      <span x-show="badge().icon === 'alert'">{% icon "triangle-alert" size=16 %}</span>
+      <span x-show="badge().icon === 'lock'">{% icon "lock" size=16 %}</span>
+      <span x-show="badge().icon === 'offline'">{% icon "wifi-off" size=16 %}</span>
+      <span class="truncate max-w-[9rem]" x-text="badge().text"></span>
+    </a>
+  </header>
+
+  <template x-if="updateReady">
+    <button type="button" @click="location.reload()" class="banner banner-ink">
+      {% icon "refresh-cw" size=18 %}{% translate "Update available — tap to reload" %}</button>
+  </template>
+  <template x-if="needLogin">
+    <a href="{% url 'accounts:login' %}" class="banner banner-danger">
+      {% icon "lock" size=18 %}{% translate "Your session has ended. Log in again — your unsent work is kept on this phone." %}</a>
+  </template>
+  <p x-show="error" x-text="error" role="alert" class="banner banner-danger"></p>
+
+  <main class="field-main" x-show="ready">
+
+    {# ---------------- S4 My work ---------------- #}
+    <template x-if="route.name === 'home'">
+      <div>
+        <p class="text-muted mb-4" x-text="date(new Date(now()).toISOString())"></p>
+        <template x-if="groups.every((g) => !g.items.length)">
+          <div class="empty-state">
+            <span class="empty-icon">{% icon "circle-check" %}</span>
+            <p class="empty-title">{% translate "Nothing to do right now." %}</p>
+          </div>
+        </template>
+        <template x-for="g in groups" :key="g.key">
+          <section x-show="g.items.length" class="mb-6">
+            <h2 class="section-title">
+              <span class="status-dot" :class="{ overdue: 'dot-danger', flagged: 'dot-warning', done: 'dot-success', now: 'dot-info' }[g.key] || 'dot-idle'"></span>
+              <span class="section-label" x-text="g.label"></span>
+              <span class="count-chip" x-text="g.items.length"></span>
+              <button type="button" x-show="g.key === 'done'" @click="showDone = !showDone"
+                      class="btn btn-ghost btn-sm ml-auto" x-text="showDone ? T.hide : T.show"></button>
+            </h2>
+            <ul class="list" x-show="g.key !== 'done' || showDone">
+              <template x-for="item in g.items" :key="item.row.id">
+                <li>
+                  <a :href="item.href" class="list-row is-link" data-testid="work-row">
+                    <span class="w-6 flex justify-center" aria-hidden="true"
+                          :class="isOverdue(item.row) ? 'text-danger' : (item.row.status === 'flagged' ? 'text-warning' : (item.row.status === 'done' ? 'text-success' : 'text-faint'))">
+                      <span x-show="statusIcon(item) === 'done'">{% icon "circle-check" %}</span>
+                      <span x-show="statusIcon(item) === 'flagged'">{% icon "flag" %}</span>
+                      <span x-show="statusIcon(item) === 'overdue'">{% icon "triangle-alert" %}</span>
+                      <span x-show="statusIcon(item) === 'progress'">{% icon "circle-dot" %}</span>
+                      <span x-show="statusIcon(item) === 'run'">{% icon "list-checks" %}</span>
+                      <span x-show="statusIcon(item) === 'task'">{% icon "circle" %}</span>
+                    </span>
+                    <span class="flex-1 min-w-0">
+                      <span class="block row-title truncate" x-text="item.kind === 'task' ? item.row.title : item.row.name"></span>
+                      <span class="row-meta">
+                        <span x-text="item.sub"></span>
+                        <span x-text="statusLabel(item.row)" :class="isOverdue(item.row) && 'text-danger'"></span>
+                        <span x-show="item.kind === 'task' && item.row.photo_required">{% icon "camera" size=14 %}</span>
+                      </span>
+                    </span>
+                    <span class="meta tabular-nums" x-text="time(item.row.due_at)"></span>
+                    <span x-show="item.pending" class="text-warning" title="{% translate 'Waiting to sync' %}">{% icon "refresh-cw" size=16 %}</span>
+                  </a>
+                </li>
+              </template>
+            </ul>
+          </section>
+        </template>
+      </div>
+    </template>
+
+    {# ---------------- S5 Task detail ---------------- #}
+    <template x-if="route.name === 'task'">
+      <div>
+        <template x-if="!task">
+          <div class="empty-state">
+            <span class="empty-icon">{% icon "inbox" %}</span>
+            <p class="empty-text">{% translate "This task was removed by your manager." %}</p>
+          </div>
+        </template>
+        <template x-if="task">
+          <div class="space-y-4">
+            <div>
+              <h2 class="page-title" x-text="task.title"></h2>
+              <p class="row-meta mt-2">
+                <span :class="isOverdue(task) && 'text-danger'"><span x-text="statusLabel(task)"></span></span>
+                <span>{% icon "clock" size=14 %}{% translate "due" %} <span x-text="time(task.due_at)"></span></span>
+                <span x-show="pendingIds.has(task.id)" class="text-warning">{% icon "refresh-cw" size=14 %}{% translate "waiting to sync" %}</span>
+              </p>
+              <p class="row-meta"><span>{% icon "map-pin" size=14 %}<span x-text="task.locationName"></span></span></p>
+              <p class="mt-3 whitespace-pre-line" x-text="task.description"></p>
+            </div>
+
+            <template x-if="task.status === 'flagged' && task.flag">
+              <p class="alert alert-warning">
+                {% icon "flag" %}<span><span x-text="task.flag.reason"></span> — {% translate "waiting for a supervisor" %}</span></p>
+            </template>
+
+            <section x-show="can('complete')" class="card card-compact">
+              <h3 class="label">
+                {% translate "Proof photo" %} <span x-show="task.photo_required">({% translate "required" %})</span></h3>
+              <template x-if="draftPhoto">
+                <div class="flex items-center gap-3 mb-3">
+                  <img :src="draftPhoto.url" alt="" class="w-24 h-24 object-cover rounded-md border">
+                  <button type="button" @click="discardDraftPhoto()" class="btn btn-danger-ghost">{% icon "x" size=18 %}{% translate "Remove" %}</button>
+                </div>
+              </template>
+              <label class="file-drop">
+                {% icon "camera" %}<span>{% translate "Take photo" %}</span>
+                <input type="file" accept="image/*" capture="environment" class="sr-only" data-testid="task-photo"
+                       @change="taskPhoto($event)" :disabled="busy">
+              </label>
+            </section>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" x-show="can('start')" @click="start()"
+                      class="btn btn-secondary btn-lg">{% icon "play" %}{% translate "Start" %}</button>
+              <button type="button" x-show="can('complete')" @click="complete()" :disabled="busy || (task.photo_required && !draftPhoto)"
+                      class="btn btn-primary btn-lg"
+                      :class="can('start') ? '' : 'col-span-2'">{% icon "check" %}{% translate "Mark done" %}</button>
+            </div>
+            <p x-show="can('complete') && task.photo_required && !draftPhoto" class="help">
+              {% translate "Take a photo first — this task needs proof." %}</p>
+
+            <button type="button" x-show="can('flag') && !flagOpen" @click="flagOpen = true"
+                    class="btn btn-secondary btn-block">{% icon "flag" %}{% translate "Report a problem" %}</button>
+            <template x-if="flagOpen">
+              <form @submit.prevent="flag()" class="card card-compact space-y-3">
+                <p class="card-title">{% translate "What's wrong?" %}</p>
+                <div class="choice-grid">
+                  <template x-for="r in me.organisation.flag_reasons" :key="r">
+                    <label class="choice normal-case">
+                      <input type="radio" name="reason" :value="r" x-model="flagReason"><span class="status-dot dot-warning"></span><span x-text="r"></span>
+                    </label>
+                  </template>
+                </div>
+                <textarea x-model="flagNote" rows="2" class="input" placeholder="{% translate 'Add a note (optional)' %}" aria-label="{% translate 'Note' %}"></textarea>
+                <div class="flex gap-2">
+                  <button type="submit" class="btn btn-warning flex-1">{% icon "send" size=18 %}{% translate "Send" %}</button>
+                  <button type="button" @click="flagOpen = false" class="btn btn-ghost">{% translate "Cancel" %}</button>
+                </div>
+              </form>
+            </template>
+
+            <template x-if="photos.length">
+              <div class="flex gap-2 flex-wrap">
+                <template x-for="p in photos" :key="p.id"><img :src="p.src" alt="" class="w-20 h-20 object-cover rounded-md border"></template>
+              </div>
+            </template>
+            <div class="card card-compact">{% include "field/_comments.html" %}</div>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    {# ---------------- S6 Checklist run ---------------- #}
+    <template x-if="route.name === 'run'">
+      <div>
+        <template x-if="!run">
+          <div class="empty-state">
+            <span class="empty-icon">{% icon "inbox" %}</span>
+            <p class="empty-text">{% translate "This checklist was removed by your manager." %}</p>
+          </div>
+        </template>
+        <template x-if="run">
+          <div class="space-y-4">
+            <div>
+              <h2 class="page-title" x-text="run.name"></h2>
+              <p class="row-meta mt-2">
+                <span x-text="statusLabel(run)"></span>
+                <span>{% icon "clock" size=14 %}{% translate "due" %} <span x-text="time(run.due_at)"></span></span></p>
+              <progress class="progress mt-3" :value="run.done" :max="items.length || 1" aria-label="{% translate 'Progress' %}"></progress>
+              <p class="meta tabular-nums mt-1"><span x-text="run.done"></span> / <span x-text="items.length"></span></p>
+              <p x-show="run.available_from && Date.parse(run.available_from) > now()" class="alert alert-warning mt-2">
+                {% icon "clock" size=18 %}<span>{% translate "Opens at" %} <span x-text="time(run.available_from)"></span></span></p>
+            </div>
+            <ul class="list">
+              <template x-for="item in items" :key="item.id">
+                <li class="px-4 py-3" data-testid="run-item">
+                  <div class="flex items-start gap-3 min-h-[44px]">
+                    <span class="w-6 flex justify-center pt-0.5" aria-hidden="true"
+                          :class="item.tick ? (item.tick.skipped ? 'text-warning' : 'text-success') : 'text-faint'">
+                      <span x-show="item.tick && item.tick.skipped">{% icon "skip-forward" %}</span>
+                      <span x-show="item.tick && !item.tick.skipped">{% icon "check-square" %}</span>
+                      <span x-show="!item.tick">{% icon "square" %}</span>
+                    </span>
+                    <span class="flex-1">
+                      <span class="text-heading" x-text="item.order + '. ' + item.label"></span>
+                      <span x-show="item.photo_required" class="text-faint">{% icon "camera" size=16 %}</span>
+                      <template x-if="item.tick">
+                        <span class="row-meta">
+                          <span x-show="item.tick.skipped">{% translate "Skipped" %}: <span x-text="item.tick.skip_reason"></span></span>
+                          <span><span x-text="item.by"></span> <span x-text="time(item.tick.time)"></span></span>
+                          <span x-show="item.pending" class="text-warning">{% icon "refresh-cw" size=14 %}</span>
+                        </span>
+                      </template>
+                    </span>
+                  </div>
+                  <template x-if="!item.tick && runOpen()">
+                    <div class="flex gap-2 mt-2 ml-9">
+                      <template x-if="!item.photo_required">
+                        <button type="button" @click="resolveItem(item, false)"
+                                class="btn btn-success">{% icon "check" size=18 %}{% translate "Done" %}</button>
+                      </template>
+                      <template x-if="item.photo_required">
+                        <label class="btn btn-success cursor-pointer">
+                          {% icon "camera" size=18 %}{% translate "Done" %}
+                          <input type="file" accept="image/*" capture="environment" class="sr-only" @change="tickWithPhoto($event, item)">
+                        </label>
+                      </template>
+                      <button type="button" x-show="item.skippable && skipping !== item.id" @click="skipping = item.id; skipReason = ''"
+                              class="btn btn-secondary">{% icon "skip-forward" size=18 %}{% translate "Skip…" %}</button>
+                    </div>
+                  </template>
+                  <template x-if="skipping === item.id">
+                    <form @submit.prevent="skip(item)" class="flex gap-2 mt-2 ml-9">
+                      <input x-model="skipReason" class="input flex-1" placeholder="{% translate 'Why?' %}" aria-label="{% translate 'Reason for skipping' %}">
+                      <button type="submit" class="btn btn-secondary">{% translate "Skip" %}</button>
+                    </form>
+                  </template>
+                </li>
+              </template>
+            </ul>
+
+            <button type="button" x-show="runOpen() && !flagOpen" @click="flagOpen = true"
+                    class="btn btn-secondary btn-block">{% icon "flag" %}{% translate "Report a problem" %}</button>
+            <template x-if="flagOpen">
+              <form @submit.prevent="flagRun()" class="card card-compact space-y-3">
+                <p class="card-title">{% translate "What's wrong?" %}</p>
+                <div class="choice-grid">
+                  <template x-for="r in me.organisation.flag_reasons" :key="r">
+                    <label class="choice normal-case">
+                      <input type="radio" name="reason" :value="r" x-model="flagReason"><span class="status-dot dot-warning"></span><span x-text="r"></span>
+                    </label>
+                  </template>
+                </div>
+                <textarea x-model="flagNote" rows="2" class="input" placeholder="{% translate 'Add a note (optional)' %}" aria-label="{% translate 'Note' %}"></textarea>
+                <div class="flex gap-2">
+                  <button type="submit" class="btn btn-warning flex-1">{% icon "send" size=18 %}{% translate "Send" %}</button>
+                  <button type="button" @click="flagOpen = false" class="btn btn-ghost">{% translate "Cancel" %}</button>
+                </div>
+              </form>
+            </template>
+            <div class="card card-compact">{% include "field/_comments.html" %}</div>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    {# ---------------- Shifts ---------------- #}
+    <template x-if="route.name === 'shifts'">
+      <div>
+        <h2 class="page-title mb-4">{% translate "My shifts" %}</h2>
+        <template x-if="!shiftDays.length">
+          <div class="empty-state">
+            <span class="empty-icon">{% icon "calendar-days" %}</span>
+            <p class="empty-text">{% translate "No shifts in the next two days." %}</p>
+          </div>
+        </template>
+        <ul class="list" x-show="shiftDays.length">
+          <template x-for="s in shiftDays" :key="s.id">
+            <li class="list-row">
+              <span class="text-faint">{% icon "calendar" %}</span>
+              <span class="flex-1 min-w-0">
+                <span class="row-title"><span x-text="s.date"></span> · <span x-text="s.name"></span></span>
+                <span class="row-meta"><span class="mono" x-text="s.hours"></span><span>{% icon "map-pin" size=14 %}<span x-text="s.location"></span></span></span>
+              </span>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    {# ---------------- Me ---------------- #}
+    <template x-if="route.name === 'me'">
+      <div class="space-y-4" x-show="me">
+        <div class="card card-compact flex items-center gap-3">
+          <span class="avatar avatar-lg" x-text="(me.membership.name || '?').split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase()"></span>
+          <div class="min-w-0">
+            <p class="person-name truncate" x-text="me.membership.name"></p>
+            <p class="person-role" x-text="me.organisation.name"></p>
+          </div>
+        </div>
+        <p class="alert"><span class="text-faint">{% icon "refresh-cw" size=18 %}</span><span><span x-text="sync.pending"></span> {% translate "changes waiting to sync" %}.
+          <span x-show="sync.lastSyncAt">{% translate "Last sync" %} <span x-text="syncedAt()"></span>.</span></span></p>
+        <button type="button" class="btn btn-secondary btn-block" x-data="{ dark: window.wfTheme && wfTheme.isDark() }"
+                @click="dark = wfTheme.toggle()" :aria-pressed="dark">
+          <span x-show="!dark">{% icon "moon" %}</span><span x-show="dark">{% icon "sun" %}</span>{% translate "Dark mode" %}
+        </button>
+        <button type="button" @click="syncNow()" data-testid="sync-now"
+                class="btn btn-primary btn-block btn-lg">{% icon "refresh-cw" %}{% translate "Sync now" %}</button>
+        <form method="post" action="{% url 'accounts:logout' %}" @submit="logout($event)">
+          <input type="hidden" name="csrfmiddlewaretoken" :value="(document.cookie.match(/csrftoken=([^;]+)/) || [])[1]">
+          <button type="submit" class="btn btn-secondary btn-block">{% icon "log-out" %}{% translate "Log out" %}</button>
+        </form>
+      </div>
+    </template>
+
+    {# ---------------- Sync problems ---------------- #}
+    <template x-if="route.name === 'problems'">
+      <div>
+        <h2 class="page-title mb-4">{% translate "Sync problems" %}</h2>
+        <template x-if="sync.status === 'error'">
+          <p class="alert alert-danger mb-3">{% icon "triangle-alert" %}<span>{% translate "The last sync failed. It will try again by itself." %}</span></p>
+        </template>
+        <template x-if="!problems.length">
+          <div class="empty-state">
+            <span class="empty-icon">{% icon "circle-check" %}</span>
+            <p class="empty-text">{% translate "Nothing to fix." %}</p>
+          </div>
+        </template>
+        <ul class="list" x-show="problems.length">
+          <template x-for="p in problems" :key="p.mutation_id">
+            <li class="list-row">
+              <span class="text-danger">{% icon "triangle-alert" size=18 %}</span>
+              <span class="flex-1" x-text="problemText(p)"></span>
+              <a x-show="p.payload.task_id" :href="'#/task/' + p.payload.task_id" class="btn btn-ghost btn-sm">{% translate "Open" %}</a>
+              <button type="button" @click="dismissProblem(p)" class="btn btn-icon is-bare" aria-label="{% translate 'Dismiss' %}">{% icon "x" size=18 %}</button>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+  </main>
+
+  <nav class="tabbar" aria-label="{% translate 'Main' %}">
+    <a href="#/" :aria-current="route.name === 'home' ? 'page' : null">{% icon "circle-check" %}{% translate "Tasks" %}</a>
+    <a href="#/shifts" :aria-current="route.name === 'shifts' ? 'page' : null">{% icon "calendar-days" %}{% translate "Shifts" %}</a>
+    <a href="#/me" :aria-current="route.name === 'me' ? 'page' : null">{% icon "user" %}{% translate "Me" %}</a>
+  </nav>
+</div>
+<noscript><p class="p-4">{% translate "WorkFlow needs JavaScript." %}</p></noscript>
+</body>
+</html>

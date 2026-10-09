@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Dashboard" %}{% endblock %}
+{% block content %}
+<div class="page space-y-6">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "Dashboard" %}</h1>
+      <p class="page-desc">{% translate "What's done, overdue and flagged, by staff, shift or location." %}</p>
+    </div>
+    <button type="button" class="btn btn-secondary" hx-get="{% url 'dashboard:summary' %}" hx-include="#filters" hx-target="#summary">
+      {% icon "refresh-cw" size=18 %}{% translate "Refresh" %}
+    </button>
+  </div>
+
+  {# Filters: one row above everything they control. #}
+  <form id="filters" method="get" class="filter-bar"
+        hx-get="{% url 'dashboard:summary' %}" hx-target="#summary" hx-trigger="change" hx-push-url="false">
+    <span class="filter-label">{% icon "filter" size=16 %}{% translate "Filters:" %}</span>
+    <select name="range" class="input" aria-label="{% translate 'Period' %}">
+      {% for key, label in periods.items %}<option value="{{ key }}" {% if key == period.key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="loc" class="input" aria-label="{% translate 'Location' %}">
+      <option value="">{% translate "All locations" %}</option>
+      {% for loc in locations %}<option value="{{ loc.id }}" {% if loc.id == location_id %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
+    </select>
+    <select name="group" class="input" aria-label="{% translate 'Group by' %}">
+      {% for key, label in groups.items %}<option value="{{ key }}" {% if key == group %}selected{% endif %}>{% translate "By" %} {{ label|lower }}</option>{% endfor %}
+    </select>
+    <noscript><button type="submit" class="btn btn-secondary">{% translate "Show" %}</button></noscript>
+  </form>
+
+  {# Refreshed every 60 s while the tab is visible (docs/04-design.md §3 S7). #}
+  <div id="summary" hx-get="{% url 'dashboard:summary' %}" hx-include="#filters"
+       hx-trigger="every 60s [document.visibilityState === 'visible']">
+    {% include "dashboard/_summary.html" %}
+  </div>
+
+  {% include "dashboard/_trend.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% load i18n ui %}
+<div class="space-y-5">
+  <p class="flex flex-wrap items-center gap-2">{% include "tasks/_status.html" %} <span class="meta">{% icon "clock" size=14 %}{% translate "due" %} {{ task.due_at|date:"D j M, H:i" }}</span></p>
+  {% if error %}<p role="alert" aria-live="polite" class="alert alert-danger">{% icon "triangle-alert" %}<span>{{ error }}</span></p>{% endif %}
+
+  {% if task.status == "flagged" %}
+    <div class="alert alert-warning">
+      {% icon "flag" %}
+      <span>{{ task.get_flag_kind_display }}: {{ task.flag_reason }}
+      {% if task.flag_kind == "problem" %}— {% translate "waiting for a supervisor" %}{% endif %}</span>
+    </div>
+  {% elif task.status == "done" and task.completed_by %}
+    <p class="alert alert-success">{% icon "circle-check" %}<span>{% blocktranslate with name=task.completed_by.name time=task.completed_received_at|date:"H:i" %}Done by {{ name }} at {{ time }}{% endblocktranslate %}</span></p>
+  {% endif %}
+
+  <section>
+    <h2 class="label">{% translate "Proof photo" %}{% if task.photo_required %} ({% translate "required" %}){% endif %}</h2>
+    {% if photos %}
+      <div class="flex flex-wrap gap-2 mb-3">
+        {% for photo in photos %}
+          <a href="{% url 'photo' photo.id %}"><img src="{% url 'photo-thumb' photo.id %}" alt="{% translate 'Proof photo' %}" loading="lazy" class="w-24 h-24 object-cover rounded-md border"></a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if can_upload %}
+      <form method="post" action="{% url 'tasks:photos' task.id %}" enctype="multipart/form-data"
+            hx-post="{% url 'tasks:photos' task.id %}" hx-encoding="multipart/form-data" hx-target="#task-panel" hx-trigger="change">
+        {% csrf_token %}
+        <label class="file-drop">
+          {% icon "camera" %}{% translate "Take photo" %}
+          <input type="file" name="photo" accept="image/*" capture="environment" class="sr-only">
+        </label>
+        <noscript><button type="submit" class="btn btn-secondary mt-2">{% translate "Upload" %}</button></noscript>
+      </form>
+    {% elif not photos %}
+      <p class="text-muted">{% translate "No photo yet." %}</p>
+    {% endif %}
+  </section>
+
+  {% if "start" in actions or "complete" in actions %}
+    <div class="grid grid-cols-2 gap-3">
+      {% if "start" in actions %}
+        <form method="post" action="{% url 'tasks:start' task.id %}" hx-post="{% url 'tasks:start' task.id %}" hx-target="#task-panel" {% if "complete" not in actions %}class="col-span-2"{% endif %}>
+          {% csrf_token %}<button type="submit" class="btn btn-secondary btn-block btn-lg">{% icon "play" %}{% translate "Start" %}</button>
+        </form>
+      {% endif %}
+      {% if "complete" in actions %}
+        <form method="post" action="{% url 'tasks:complete' task.id %}" hx-post="{% url 'tasks:complete' task.id %}" hx-target="#task-panel" {% if "start" not in actions %}class="col-span-2"{% endif %}>
+          {% csrf_token %}<button type="submit" class="btn btn-primary btn-block btn-lg">{% icon "check" %}{% translate "Mark done" %}</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if "flag" in actions %}
+    <details class="disclosure">
+      <summary>{% icon "flag" %}{% translate "Report a problem" %}{% icon "chevron-down" size=16 class="ml-auto text-faint" %}</summary>
+      <form method="post" action="{% url 'tasks:flag' task.id %}" hx-post="{% url 'tasks:flag' task.id %}" hx-target="#task-panel" class="disclosure-body space-y-4">
+        {% csrf_token %}
+        <div>
+          <label for="id_flag_reason" class="label">{% translate "Reason" %}</label>
+          <select id="id_flag_reason" name="reason" required class="input">
+            {% for reason in flag_reasons %}<option value="{{ reason }}">{{ reason }}</option>{% endfor %}
+          </select>
+        </div>
+        <input type="text" name="note" maxlength="200" placeholder="{% translate 'Anything else? (optional)' %}" aria-label="{% translate 'Note' %}" class="input">
+        <button type="submit" class="btn btn-warning btn-block">{% icon "flag" %}{% translate "Report" %}</button>
+      </form>
+    </details>
+  {% endif %}
+
+  {% if "reject" in actions %}
+    <details class="disclosure">
+      <summary>{% icon "rotate-ccw" %}{% translate "Send back" %}{% icon "chevron-down" size=16 class="ml-auto text-faint" %}</summary>
+      <form method="post" action="{% url 'tasks:reject' task.id %}" hx-post="{% url 'tasks:reject' task.id %}" hx-target="#task-panel" class="disclosure-body space-y-4">
+        {% csrf_token %}
+        <textarea name="reason" required maxlength="300" rows="2" placeholder="{% translate 'What needs redoing?' %}" aria-label="{% translate 'Reason' %}" class="input"></textarea>
+        <button type="submit" class="btn btn-warning btn-block">{% icon "rotate-ccw" %}{% translate "Send back" %}</button>
+      </form>
+    </details>
+  {% endif %}
+
+  {% if "resolve_flag" in actions %}
+    <form method="post" action="{% url 'tasks:resolve_flag' task.id %}" hx-post="{% url 'tasks:resolve_flag' task.id %}" hx-target="#task-panel" class="flex gap-2">
+      {% csrf_token %}
+      <input type="text" name="note" maxlength="300" placeholder="{% translate 'How was it resolved? (optional)' %}" aria-label="{% translate 'Note' %}" class="input flex-1">
+      <button type="submit" class="btn btn-secondary">{% icon "check" %}{% translate "Resolve" %}</button>
+    </form>
+  {% endif %}
+
+  {% if can_edit or "cancel" in actions %}
+    <div class="flex items-center justify-between gap-3 pt-4 border-t">
+      {% if can_edit %}<a href="{% url 'tasks:edit' task.id %}" class="btn btn-ghost">{% icon "pencil" size=18 %}{% translate "Edit or reassign" %}</a>{% else %}<span></span>{% endif %}
+      {% if "cancel" in actions %}
+        <form method="post" action="{% url 'tasks:cancel' task.id %}" hx-post="{% url 'tasks:cancel' task.id %}" hx-target="#task-panel" hx-confirm="{% translate 'Cancel this task?' %}">
+          {% csrf_token %}<button type="submit" class="btn btn-danger-ghost">{% icon "trash-2" size=18 %}{% translate "Cancel task" %}</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>

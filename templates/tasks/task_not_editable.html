@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="card empty-state">
+    <span class="empty-icon">{% icon "lock" %}</span>
+    <p class="empty-title">{% translate "This task is finished, so it can't be edited or reassigned." %}</p>
+    <a href="{% url 'tasks:detail' task.id %}" class="btn btn-secondary mt-2">{% icon "arrow-left" size=18 %}{% translate "Back to the task" %}</a>
+  </div>
+</div>
+{% endblock %}

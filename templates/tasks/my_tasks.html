@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "My tasks" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "My tasks" %}</h1>
+      <p class="page-desc">
+        {% now "l j F" %}
+        {% for entry in shifts_today %} · {{ entry.shift.name }} ({{ entry.shift.location.name }}){% endfor %}
+      </p>
+    </div>
+  </div>
+  {% for key, label, tasks in groups %}
+    <section class="mb-8">
+      <h2 class="section-title">
+        <span class="status-dot {% if key == 'overdue' %}dot-danger{% elif key == 'flagged' %}dot-warning{% elif key == 'done' %}dot-success{% elif key == 'now' %}dot-info{% else %}dot-idle{% endif %}"></span>
+        <span class="section-label">{{ label }}</span>
+        <span class="count-chip">{{ tasks|length }}</span>
+      </h2>
+      <ul class="space-y-2">
+        {% for entry in tasks %}{% if entry.kind == "run" %}{% include "checklists/_run_card.html" with run=entry %}{% else %}{% include "tasks/_task_card.html" with task=entry %}{% endif %}{% endfor %}
+      </ul>
+    </section>
+  {% empty %}
+    <div class="card empty-state">
+      <span class="empty-icon">{% icon "circle-check" %}</span>
+      <p class="empty-title">{% translate "Nothing for you today." %}</p>
+      <p class="empty-text">{% translate "New work shows up here when it's assigned to you or your shift." %}</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

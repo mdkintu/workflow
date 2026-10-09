@@ -1,0 +1,10 @@
+{% load i18n ui %}
+<ul id="task-rows" class="space-y-2">
+  {% for task in tasks %}{% include "tasks/_task_card.html" %}{% empty %}
+    <li class="card empty-state">
+      <span class="empty-icon">{% icon "inbox" %}</span>
+      <p class="empty-title">{% translate "No tasks match." %}</p>
+      <p class="empty-text">{% translate "Try another day, location or status." %}</p>
+    </li>
+  {% endfor %}
+</ul>

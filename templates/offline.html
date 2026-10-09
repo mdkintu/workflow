@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Offline" %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="empty-state">
+    <span class="empty-icon">{% icon "wifi-off" %}</span>
+    <p class="empty-title">{% translate "You're offline." %}</p>
+    <p class="empty-text">{% translate "Reconnect to sync your work." %}</p>
+  </div>
+</div>
+{% endblock %}

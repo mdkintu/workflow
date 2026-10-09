@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Log in" %} · WorkFlow{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand justify-center mb-2">
+      <span class="brand-tile" aria-hidden="true">WF</span>
+      <span><span class="brand-name block">WorkFlow</span><span class="brand-sub block">{% translate "Tasks & checklists" %}</span></span>
+    </div>
+    <div class="card">
+      <h1 class="page-title">{% translate "Log in" %}</h1>
+      <p class="page-desc mb-6">{% translate "Use your phone number and PIN." %}</p>
+      {% if error %}
+        <p role="alert" aria-live="polite" class="alert alert-danger mb-4">{% icon "triangle-alert" %}<span>{{ error }}</span></p>
+      {% endif %}
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        <div>
+          <label for="id_phone" class="label">{% translate "Phone number" %}</label>
+          <input type="tel" inputmode="numeric" id="id_phone" name="phone" required autofocus
+                 class="input {% if error %}is-error{% endif %}" placeholder="0772 123 456">
+        </div>
+        <div>
+          <label for="id_pin" class="label">{% translate "PIN" %}</label>
+          <input type="password" inputmode="numeric" pattern="[0-9]*" id="id_pin" name="pin" required
+                 maxlength="6" class="input {% if error %}is-error{% endif %}">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">{% icon "log-in" %}{% translate "Log in" %}</button>
+      </form>
+    </div>
+    <p class="text-center text-muted mt-6">{% translate "Forgot PIN? Ask your supervisor." %}</p>
+  </div>
+</div>
+{% endblock %}

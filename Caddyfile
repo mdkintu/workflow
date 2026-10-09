@@ -1,0 +1,39 @@
+# WorkFlow Caddyfile (docs/02-architecture.md §7). No literal hosts: {$SITE_HOST}
+# and {$CADDY_TLS} come from the environment so the same file serves a LAN
+# install (`internal` CA) and a public VPS (ACME email) — ADR-12, ADR-18.
+
+{$SITE_HOST} {
+	tls {$CADDY_TLS}
+	encode zstd gzip
+
+	handle_path /static/* {
+		root * /srv/static
+		file_server
+	}
+
+	# Never reachable directly from outside: only Django's X-Accel-Redirect
+	# response header (below) is allowed to resolve a /_protected/* path.
+	@direct_media path /_protected/*
+	respond @direct_media 404
+
+	reverse_proxy web:8000 {
+		@accel header X-Accel-Redirect *
+		handle_response @accel {
+			rewrite * {rp.header.X-Accel-Redirect}
+			uri strip_prefix /_protected
+			root * /srv
+			file_server
+		}
+	}
+}
+
+# The only plain-HTTP routes: the CA setup page (LAN onboarding, docs/02 §7)
+# and a redirect to HTTPS for everything else.
+http://{$SITE_HOST} {
+	handle /setup* {
+		reverse_proxy web:8000
+	}
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}

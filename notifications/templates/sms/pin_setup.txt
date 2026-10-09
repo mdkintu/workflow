@@ -1,0 +1,1 @@
+Your WorkFlow PIN setup code is {{ code }}. It expires in 24h. Do not share it. {{ site_url }}

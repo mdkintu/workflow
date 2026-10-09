@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Checklists" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "Checklists" %}</h1>
+      <p class="page-desc">{% translate "Checklists due each day, created from your schedules." %}</p>
+    </div>
+    {% if can_manage %}<a href="{% url 'checklists:templates' %}" class="btn btn-secondary">{% icon "settings" size=18 %}{% translate "Templates & schedules" %}</a>{% endif %}
+  </div>
+  <div class="filter-bar">
+    <a href="?day={{ previous_day|date:'Y-m-d' }}" class="btn btn-icon is-bare" aria-label="{% translate 'Previous day' %}">{% icon "chevron-left" %}</a>
+    <span class="flex-1 text-center font-semibold text-heading">{{ day|date:"l j F" }}</span>
+    <a href="?day={{ next_day|date:'Y-m-d' }}" class="btn btn-icon is-bare" aria-label="{% translate 'Next day' %}">{% icon "chevron-right" %}</a>
+  </div>
+  <ul class="space-y-2">
+    {% for run in runs %}{% include "checklists/_run_card.html" %}{% empty %}
+      <li class="card empty-state">
+        <span class="empty-icon">{% icon "list-checks" %}</span>
+        <p class="empty-title">{% translate "No checklists due this day." %}</p>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,1 @@
+{{ task_title|truncatechars:40 }} was done at {{ completed_time }}, synced late. {{ site_url }}

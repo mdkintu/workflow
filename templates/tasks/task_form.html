@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% if task %}{% translate "Edit task" %}{% else %}{% translate "New task" %}{% endif %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% if task %}{% url 'tasks:detail' task.id %}{% else %}{% url 'tasks:list' %}{% endif %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "Back" %}</a>
+  <div class="page-header mt-2">
+    <div>
+      <h1 class="page-title">{% if task %}{% translate "Edit or reassign" %}{% else %}{% translate "New task" %}{% endif %}</h1>
+      <p class="page-desc">{% translate "Fields marked * are required." %}</p>
+    </div>
+  </div>
+  {% if form.non_field_errors %}<p role="alert" class="alert alert-danger mb-4">{% icon "triangle-alert" %}<span>{{ form.non_field_errors|join:" " }}</span></p>{% endif %}
+  <form method="post" class="card space-y-5" x-data="{ assign: '{{ form.assign_type.value|default:'person' }}' }">
+    {% csrf_token %}
+    <div>
+      <label for="id_title" class="label">{% translate "Title" %} *</label>
+      <input type="text" name="title" id="id_title" maxlength="120" required value="{{ form.title.value|default:'' }}" class="input {% if form.title.errors %}is-error{% endif %}">
+      {% for e in form.title.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    </div>
+    <div>
+      <label for="id_description" class="label">{% translate "Details" %}</label>
+      <textarea name="description" id="id_description" rows="3" maxlength="1000" class="input">{{ form.description.value|default:'' }}</textarea>
+    </div>
+    <div>
+      <label for="id_location" class="label">{% translate "Location" %} *</label>
+      <select name="location" id="id_location" required class="input {% if form.location.errors %}is-error{% endif %}"
+              hx-get="{% url 'tasks:assignees' %}" hx-trigger="change" hx-target="#assignees" hx-swap="outerHTML"
+              hx-include="[name='due_date'],[name='assignee_membership'],[name='assignee_shift']">
+        <option value="">—</option>
+        {% for loc in form.fields.location.queryset %}
+          <option value="{{ loc.id }}" {% if loc.id|stringformat:"s" == form.location.value|stringformat:"s" %}selected{% endif %}>{{ loc.name }}</option>
+        {% endfor %}
+      </select>
+      {% for e in form.location.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    </div>
+    <fieldset>
+      <legend class="label">{% translate "Assign to" %} *</legend>
+      <div class="choice-grid">
+        {% for value, label in form.fields.assign_type.choices %}
+          <label class="choice">
+            <input type="radio" name="assign_type" value="{{ value }}" x-model="assign" {% if form.assign_type.value == value %}checked{% endif %}>
+            <span class="status-dot {% if value == 'person' %}dot-info{% elif value == 'shift' %}dot-warning{% else %}dot-success{% endif %}"></span>{{ label }}
+          </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% include "tasks/_assignees.html" %}
+    {% for e in form.assignee_membership.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    {% for e in form.assignee_shift.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    <div x-show="assign === 'shift'">
+      <label for="id_shift_date" class="label">{% translate "Shift date" %}</label>
+      <input type="date" name="shift_date" id="id_shift_date" value="{{ form.shift_date.value|date:'Y-m-d'|default:form.shift_date.value|default:'' }}" class="input {% if form.shift_date.errors %}is-error{% endif %}">
+      {% for e in form.shift_date.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label for="id_due_date" class="label">{% translate "Due date" %} *</label>
+        <input type="date" name="due_date" id="id_due_date" required value="{{ form.due_date.value|date:'Y-m-d'|default:form.due_date.value|default:'' }}" class="input {% if form.due_date.errors %}is-error{% endif %}">
+      </div>
+      <div>
+        <label for="id_due_time" class="label">{% translate "Time" %} *</label>
+        <input type="time" name="due_time" id="id_due_time" required value="{{ form.due_time.value|time:'H:i'|default:form.due_time.value|default:'' }}" class="input {% if form.due_time.errors %}is-error{% endif %}">
+      </div>
+    </div>
+    {% for e in form.due_date.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    {% for e in form.due_time.errors %}<p class="field-error">{% icon "triangle-alert" size=14 %}{{ e }}</p>{% endfor %}
+    <label class="check">
+      <input type="checkbox" name="photo_required" {% if form.photo_required.value %}checked{% endif %}> {% icon "camera" size=18 class="text-faint" %}{% translate "Photo required" %}
+    </label>
+    <div>
+      <label for="id_reminder_lead_min" class="label">{% translate "Reminder" %}</label>
+      <select name="reminder_lead_min" id="id_reminder_lead_min" class="input">
+        {% for value, label in form.fields.reminder_lead_min.choices %}
+          <option value="{{ value }}" {% if value|stringformat:"s" == form.reminder_lead_min.value|default_if_none:""|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block btn-lg">{% icon "check" %}{% translate "Save task" %}</button>
+  </form>
+</div>
+{% endblock %}

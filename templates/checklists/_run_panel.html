@@ -1,0 +1,81 @@
+{% load i18n ui %}
+<div class="space-y-5">
+  <div>
+    <p class="flex items-center justify-between gap-2 mb-2">{% include "tasks/_status.html" with task=run %} <span class="text-muted tabular-nums">{{ resolved }} / {{ items|length }}</span></p>
+    <progress class="progress" value="{{ percent }}" max="100" aria-label="{% translate 'Progress' %}">{{ percent }}%</progress>
+  </div>
+  {% if error %}<p role="alert" aria-live="polite" class="alert alert-danger">{% icon "triangle-alert" %}<span>{{ error }}</span></p>{% endif %}
+  {% if not_yet_open and "tick" in actions %}<p class="alert alert-warning">{% icon "clock" %}<span>{% blocktranslate with t=run.available_from|date:"D H:i" %}Opens {{ t }}.{% endblocktranslate %}</span></p>{% endif %}
+
+  <ol class="list">
+    {% for item in items %}
+      <li class="px-4 py-3" {% if not item.tick and "tick" in actions %}x-data="{ open: false }"{% endif %}>
+        {% if item.tick %}
+          <p class="flex items-start gap-3 {% if item.tick.skipped %}text-warning{% else %}text-success{% endif %}">
+            {% if item.tick.skipped %}{% icon "skip-forward" %}{% else %}{% icon "check-square" %}{% endif %}
+            <span class="text-heading">{{ forloop.counter }}. {{ item.label }}</span>
+          </p>
+          <p class="row-meta pl-8">
+            {% if item.tick.skipped %}<span>{% translate "Skipped" %}: “{{ item.tick.skip_reason }}”</span>{% endif %}
+            <span>{% icon "user" size=14 %}{{ item.tick.membership.name }} {{ item.tick.trusted_time|date:"H:i" }}</span>
+            {% if item.tick.photo_id %}<a href="{% url 'photo' item.tick.photo_id %}" class="link">{% icon "camera" size=14 %}{% translate "photo" %}</a>{% endif %}
+          </p>
+        {% elif "tick" in actions %}
+          <button type="button" @click="open = !open" :aria-expanded="open" class="w-full text-left min-h-[44px] flex items-center gap-3">
+            {% icon "square" class="text-faint" %}<span class="flex-1">{{ forloop.counter }}. {{ item.label }}</span>
+            {% if item.photo_required %}{% icon "camera" size=18 class="text-faint" %}{% endif %}
+          </button>
+          <div x-show="open" x-cloak class="pl-8 pt-2 space-y-2">
+            <form method="post" action="{% url 'checklists:item-tick' item.id %}" enctype="multipart/form-data"
+                  hx-post="{% url 'checklists:item-tick' item.id %}" hx-encoding="multipart/form-data" hx-target="#run-panel" class="flex flex-wrap gap-2 items-center">
+              {% csrf_token %}
+              <label class="file-drop flex-1 min-h-[44px]">
+                {% icon "camera" size=18 %}{% if item.photo_required %}{% translate "Photo (required)" %}{% else %}{% translate "Photo (optional)" %}{% endif %}
+                <input type="file" name="photo" accept="image/*" capture="environment" class="sr-only">
+              </label>
+              <button type="submit" class="btn btn-success">{% icon "check" size=18 %}{% translate "Done" %}</button>
+            </form>
+            {% if item.skippable and "skip" in actions %}
+              <form method="post" action="{% url 'checklists:item-skip' item.id %}" hx-post="{% url 'checklists:item-skip' item.id %}" hx-target="#run-panel" class="flex gap-2">
+                {% csrf_token %}
+                <input type="text" name="reason" required maxlength="200" placeholder="{% translate 'Why skip?' %}" aria-label="{% translate 'Reason for skipping' %}" class="input flex-1">
+                <button type="submit" class="btn btn-secondary">{% icon "skip-forward" size=18 %}{% translate "Skip" %}</button>
+              </form>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="flex items-center gap-3 text-muted">{% icon "square" class="text-faint" %}<span class="flex-1">{{ forloop.counter }}. {{ item.label }}</span>{% if item.photo_required %}{% icon "camera" size=18 %}{% endif %}</p>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+
+  {% if "flag" in actions %}
+    <details class="disclosure">
+      <summary>{% icon "flag" %}{% translate "Report a problem" %}{% icon "chevron-down" size=16 class="ml-auto text-faint" %}</summary>
+      <form method="post" action="{% url 'checklists:run-flag' run.id %}" hx-post="{% url 'checklists:run-flag' run.id %}" hx-target="#run-panel" class="disclosure-body space-y-4">
+        {% csrf_token %}
+        <div>
+          <label for="id_run_flag_reason" class="label">{% translate "Reason" %}</label>
+          <select id="id_run_flag_reason" name="reason" required class="input">
+            {% for reason in flag_reasons %}<option value="{{ reason }}">{{ reason }}</option>{% endfor %}
+          </select>
+        </div>
+        <input type="text" name="note" maxlength="200" placeholder="{% translate 'Anything else? (optional)' %}" aria-label="{% translate 'Note' %}" class="input">
+        <button type="submit" class="btn btn-warning btn-block">{% icon "flag" %}{% translate "Report" %}</button>
+      </form>
+    </details>
+  {% endif %}
+  {% if "resolve_flag" in actions %}
+    <form method="post" action="{% url 'checklists:run-resolve-flag' run.id %}" hx-post="{% url 'checklists:run-resolve-flag' run.id %}" hx-target="#run-panel" class="flex gap-2">
+      {% csrf_token %}
+      <input type="text" name="note" maxlength="300" placeholder="{% translate 'How was it resolved? (optional)' %}" aria-label="{% translate 'Note' %}" class="input flex-1">
+      <button type="submit" class="btn btn-secondary">{% icon "check" %}{% translate "Resolve" %}</button>
+    </form>
+  {% endif %}
+  {% if "cancel" in actions %}
+    <form method="post" action="{% url 'checklists:run-cancel' run.id %}" hx-post="{% url 'checklists:run-cancel' run.id %}" hx-target="#run-panel" hx-confirm="{% translate 'Cancel this checklist?' %}" class="text-right pt-4 border-t">
+      {% csrf_token %}<button type="submit" class="btn btn-danger-ghost">{% icon "trash-2" size=18 %}{% translate "Cancel checklist" %}</button>
+    </form>
+  {% endif %}
+</div>

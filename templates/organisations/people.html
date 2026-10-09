@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "People" %}{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "People" %}</h1>
+      <p class="page-desc">{% translate "Everyone in this organisation, and when they last used WorkFlow." %}</p>
+    </div>
+    <a href="{% url 'organisations:people-invite' %}" class="btn btn-primary">{% icon "plus" %}{% translate "Invite" %}</a>
+  </div>
+
+  {% if memberships %}
+    <ul class="people-grid">
+      {% for membership in memberships %}
+        <li class="card" data-testid="person-card">
+          <div class="person-head">
+            <span class="avatar avatar-lg">{{ membership.name|initials }}
+              <span class="presence {% if membership.presence == 'online' %}dot-success{% elif membership.presence == 'away' %}dot-warning{% else %}dot-idle{% endif %}"
+                    title="{% if membership.presence == 'online' %}{% translate 'Online' %}{% elif membership.presence == 'away' %}{% translate 'Away' %}{% else %}{% translate 'Offline' %}{% endif %}"></span>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="person-name truncate">{{ membership.name }}</p>
+              <p class="person-role">{{ membership.get_role_display }} · <span class="mono">{{ membership.user.phone_e164 }}</span></p>
+            </div>
+            {% if membership.user.must_set_pin %}<span class="badge badge-warning">{% translate "PIN not set yet" %}</span>{% endif %}
+          </div>
+          <div class="meta-row">
+            <span class="meta">{% icon "map-pin" size=14 %}{% if membership.location_names %}{{ membership.location_names|join:", " }}{% else %}{% translate "All locations" %}{% endif %} · <span class="mono">{{ request.organisation.timezone }}</span></span>
+            <span class="meta">{% icon "clock" size=14 %}{% if membership.last_seen_at %}{% blocktranslate with ago=membership.last_seen_at|timesince %}Active {{ ago }} ago{% endblocktranslate %}{% else %}{% translate "Not active yet" %}{% endif %}</span>
+          </div>
+          {% if membership.current_task %}
+            <a href="{% url 'tasks:detail' membership.current_task.id %}" class="quote-box">{% icon "message-square" size=16 class="text-faint mt-0.5" %}<span>{% blocktranslate with title=membership.current_task.title %}Working on: {{ title }}{% endblocktranslate %}</span></a>
+          {% endif %}
+          {% if membership.can_reset_pin %}
+            <form method="post" action="{% url 'organisations:people-reset-pin' membership.id %}" class="mt-4">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary btn-sm">{% icon "key-round" size=16 %}{% translate "Reset PIN" %}</button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="card empty-state">
+      <span class="empty-icon">{% icon "users" %}</span>
+      <p class="empty-title">{% translate "No one here yet." %}</p>
+      <p class="empty-text">{% translate "Invite your team; they get an SMS to set a PIN." %}</p>
+      <a href="{% url 'organisations:people-invite' %}" class="btn btn-primary mt-2">{% icon "plus" %}{% translate "Invite" %}</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Tasks" %}{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "Tasks" %}</h1>
+      <p class="page-desc">{% translate "Everything due, by day and location." %}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <nav class="segmented" aria-label="{% translate 'View' %}">
+        <a href="?view=list&loc={{ location_id|default:'' }}&day={{ day|date:'Y-m-d' }}" {% if view == "list" %}aria-current="page"{% endif %}>{% icon "list" size=16 %}{% translate "List" %}</a>
+        <a href="?view=board&loc={{ location_id|default:'' }}&day={{ day|date:'Y-m-d' }}" {% if view == "board" %}aria-current="page"{% endif %}>{% icon "kanban" size=16 %}{% translate "Board" %}</a>
+      </nav>
+      {% if can_create %}
+        <a href="{% url 'tasks:create' %}" class="btn btn-primary">{% icon "plus" %}{% translate "New task" %}</a>
+      {% endif %}
+    </div>
+  </div>
+  <form method="get" class="filter-bar"
+        hx-get="{% url 'tasks:list' %}" hx-target="{% if view == 'board' %}#task-board{% else %}#task-rows{% endif %}" hx-swap="outerHTML" hx-trigger="change" hx-push-url="true">
+    <span class="filter-label">{% icon "filter" size=16 %}{% translate "Filters:" %}</span>
+    <input type="hidden" name="view" value="{{ view }}">
+    {% if view == "list" %}
+      <select name="bucket" class="input" aria-label="{% translate 'Status' %}">
+        {% for value in buckets %}<option value="{{ value }}" {% if value == bucket %}selected{% endif %}>{{ value|capfirst }}</option>{% endfor %}
+      </select>
+    {% endif %}
+    <select name="loc" class="input" aria-label="{% translate 'Location' %}">
+      <option value="">{% translate "All locations" %}</option>
+      {% for loc in locations %}<option value="{{ loc.id }}" {% if loc.id == location_id %}selected{% endif %}>{{ loc.name }}</option>{% endfor %}
+    </select>
+    <input type="date" name="day" value="{{ day|date:'Y-m-d' }}" class="input" aria-label="{% translate 'Day' %}">
+    <noscript><button type="submit" class="btn btn-secondary">{% translate "Filter" %}</button></noscript>
+  </form>
+  {% if view == "board" %}{% include "tasks/_task_board.html" %}{% else %}{% include "tasks/_task_rows.html" %}{% endif %}
+</div>
+{% endblock %}

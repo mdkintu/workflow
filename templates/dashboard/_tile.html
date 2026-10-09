@@ -1,0 +1,6 @@
+{% load i18n ui %}
+<a href="{% url 'dashboard:list' %}?bucket={{ bucket }}&range={{ period.key }}&loc={{ location_id|default:'' }}" class="card card-compact stat">
+  <span class="stat-label"><span class="status-dot {{ dot }}"></span>{{ label }}</span>
+  <span class="stat-value">{{ value }}</span>
+  {% if late %}<span class="stat-note">{% blocktranslate count n=late %}{{ n }} late{% plural %}{{ n }} late{% endblocktranslate %}</span>{% endif %}
+</a>

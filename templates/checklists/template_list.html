@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Checklist templates" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% url 'checklists:runs' %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "Today's checklists" %}</a>
+  <div class="page-header mt-2">
+    <div>
+      <h1 class="page-title">{% translate "Checklist templates" %}</h1>
+      <p class="page-desc">{% translate "The items and schedules each checklist is created from." %}</p>
+    </div>
+    <a href="{% url 'checklists:template-create' %}" class="btn btn-primary">{% icon "plus" %}{% translate "New checklist" %}</a>
+  </div>
+  <ul class="space-y-2">
+    {% for template in templates %}
+      <li>
+        <a href="{% url 'checklists:template' template.id %}" class="card card-compact card-link flex items-start gap-3 {% if not template.is_active %}is-muted{% endif %}">
+          <span class="mt-0.5 text-faint">{% icon "clipboard-check" %}</span>
+          <span class="flex-1 min-w-0">
+            <span class="flex items-start justify-between gap-3">
+              <span class="row-title">{{ template.name }}</span>
+              {% if not template.is_active %}<span class="badge badge-neutral">{% translate "inactive" %}</span>{% elif not template.rule_count %}<span class="badge badge-warning">{% translate "not scheduled" %}</span>{% endif %}
+            </span>
+            <span class="row-meta">
+              <span>{% icon "map-pin" size=14 %}{{ template.location.name }}{% if template.shift %} · {{ template.shift.name }}{% endif %}</span>
+              <span>{% icon "list-checks" size=14 %}{% blocktranslate count n=template.item_count %}{{ n }} item{% plural %}{{ n }} items{% endblocktranslate %}</span>
+              {% if template.rule_count %}<span>{% icon "calendar" size=14 %}{% blocktranslate count n=template.rule_count %}{{ n }} schedule{% plural %}{{ n }} schedules{% endblocktranslate %}</span>{% endif %}
+            </span>
+          </span>
+        </a>
+      </li>
+    {% empty %}
+      <li class="card empty-state">
+        <span class="empty-icon">{% icon "clipboard-check" %}</span>
+        <p class="empty-title">{% translate "No checklists yet." %}</p>
+        <p class="empty-text">{% translate "Create one for opening, closing or inspection rounds." %}</p>
+        <a href="{% url 'checklists:template-create' %}" class="btn btn-primary mt-2">{% icon "plus" %}{% translate "New checklist" %}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

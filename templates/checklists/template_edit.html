@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{{ template.name }}{% endblock %}
+{% block content %}
+<div class="page page-narrow space-y-6">
+  <div>
+    <a href="{% url 'checklists:templates' %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "All checklists" %}</a>
+    <h1 class="page-title mt-2">{{ template.name }}</h1>
+    <p class="row-meta mt-2"><span>{% icon "map-pin" size=14 %}{{ template.location.name }}{% if template.shift %} · {{ template.shift.name }}{% endif %}</span></p>
+  </div>
+
+  <section class="card">
+    <h2 class="card-title">{% icon "list-checks" %}{% translate "Items" %}</h2>
+    <p class="card-subtitle mb-4">{% translate "Changes apply to checklists scheduled from now on; ones already scheduled keep their items." %}</p>
+    {% include "checklists/_items.html" %}
+  </section>
+
+  <section class="card">
+    <h2 class="card-title mb-4">{% icon "calendar" %}{% translate "Schedules" %}</h2>
+    <ul class="list mb-4">
+      {% for rule in rules %}
+        <li class="list-row {% if not rule.is_active %}opacity-60{% endif %}">
+          <span class="flex-1">
+            {{ rule.get_kind_display }}
+            <span class="mono text-[14px]">{% if rule.kind == "shift_start" %}({{ template.shift.start_time|time:"H:i" }}){% else %}{% for t in rule.times %}{{ t|time:"H:i" }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</span>
+            {% if rule.day_names %}· {{ rule.day_names|join:" " }}{% endif %}
+            <span class="block text-muted text-[14px]">{% blocktranslate with n=rule.due_offset_min %}due after {{ n }} min{% endblocktranslate %}</span>
+          </span>
+          {% if not rule.is_active %}<span class="badge badge-neutral">{% translate "paused" %}</span>{% endif %}
+          <form method="post" action="{% url 'checklists:rule-toggle' rule.id %}">
+            {% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm">{% if rule.is_active %}{% translate "Pause" %}{% else %}{% translate "Resume" %}{% endif %}</button>
+          </form>
+        </li>
+      {% empty %}
+        <li class="alert alert-warning rounded-none border-0">{% icon "triangle-alert" %}<span>{% translate "Not scheduled yet — nothing will be created until you add a schedule." %}</span></li>
+      {% endfor %}
+    </ul>
+    <details class="disclosure" {% if not rules %}open{% endif %}>
+      <summary>{% icon "plus" %}{% translate "Add schedule" %}{% icon "chevron-down" size=16 class="ml-auto text-faint" %}</summary>
+      <form method="post" action="{% url 'checklists:rule-add' template.id %}" class="disclosure-body space-y-4" x-data="{ kind: 'daily' }">
+        {% csrf_token %}
+        <div>
+          <label for="id_rule_kind" class="label">{% translate "Repeats" %}</label>
+          <select id="id_rule_kind" name="kind" x-model="kind" class="input">
+            <option value="daily">{% translate "Every day" %}</option>
+            <option value="weekly">{% translate "On certain days" %}</option>
+            {% if template.shift %}<option value="shift_start">{% blocktranslate with name=template.shift.name %}At the start of every {{ name }} shift{% endblocktranslate %}</option>{% endif %}
+          </select>
+        </div>
+        <div x-show="kind !== 'shift_start'">
+          <label for="id_rule_times" class="label">{% translate "Times (24-hour, comma-separated)" %}</label>
+          <input type="text" id="id_rule_times" name="times" placeholder="07:00, 13:00" class="input mono">
+        </div>
+        <fieldset class="flex flex-wrap gap-x-4" x-show="kind === 'weekly'">
+          {% for value, label in rule_form.fields.weekdays.choices %}
+            <label class="check"><input type="checkbox" name="weekdays" value="{{ value }}"> {{ label }}</label>
+          {% endfor %}
+        </fieldset>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label for="id_due_offset" class="label">{% translate "Due after (min)" %}</label><input type="number" id="id_due_offset" name="due_offset_min" min="5" max="1440" value="60" class="input"></div>
+          <div><label for="id_available_before" class="label">{% translate "Opens early (min)" %}</label><input type="number" id="id_available_before" name="available_before_min" min="0" max="720" value="0" class="input"></div>
+          <div><label for="id_starts_on" class="label">{% translate "From" %}</label><input type="date" id="id_starts_on" name="starts_on" required value="{{ rule_form.initial.starts_on|date:'Y-m-d' }}" class="input"></div>
+          <div><label for="id_ends_on" class="label">{% translate "Until (optional)" %}</label><input type="date" id="id_ends_on" name="ends_on" class="input"></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">{% icon "plus" %}{% translate "Add schedule" %}</button>
+      </form>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title mb-4">{% icon "settings" %}{% translate "Details" %}</h2>
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+      {% include "checklists/_template_fields.html" %}
+      <label class="check"><input type="checkbox" name="is_active" {% if template.is_active %}checked{% endif %}> {% translate "Active" %}</label>
+      <button type="submit" class="btn btn-secondary btn-block">{% translate "Save details" %}</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

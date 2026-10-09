@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Invite someone" %}{% endblock %}
+{% block content %}
+<div class="page page-narrow">
+  <a href="{% url 'organisations:people' %}" class="back-link">{% icon "arrow-left" size=18 %}{% translate "People" %}</a>
+  <div class="page-header mt-2">
+    <div>
+      <h1 class="page-title">{% translate "Invite someone" %}</h1>
+      <p class="page-desc">{% translate "They'll get an SMS with a code to set their own PIN." %}</p>
+    </div>
+  </div>
+  <div class="card">
+    {% if error %}
+      <p role="alert" aria-live="polite" class="alert alert-danger mb-4">{% icon "triangle-alert" %}<span>{{ error }}</span></p>
+    {% endif %}
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+      <div>
+        <label for="id_name" class="label">{% translate "Name" %}</label>
+        <input type="text" id="id_name" name="name" required autofocus class="input">
+      </div>
+      <div>
+        <label for="id_phone" class="label">{% translate "Phone number" %}</label>
+        <input type="tel" inputmode="numeric" id="id_phone" name="phone" required class="input" placeholder="0772 123 456">
+      </div>
+      <fieldset>
+        <legend class="label">{% translate "Role" %}</legend>
+        <div class="choice-grid">
+          {% for value, label in role_choices %}
+            <label class="choice"><input type="radio" name="role" value="{{ value }}" required {% if value == "staff" %}checked{% endif %}><span class="status-dot {% if value == 'owner' %}dot-danger{% elif value == 'manager' %}dot-warning{% elif value == 'supervisor' %}dot-info{% else %}dot-success{% endif %}"></span>{{ label }}</label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <button type="submit" class="btn btn-primary btn-block">{% icon "send" %}{% translate "Send invite" %}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

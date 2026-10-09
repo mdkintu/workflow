@@ -1,0 +1,12 @@
+{% load static %}{% comment %}
+  Shared <head> assets for base.html and the field app shell (ADR-19): fonts from
+  Google Fonts (system fallbacks when offline), the one stylesheet, and the theme
+  script, which runs before first paint.
+{% endcomment %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'theme.js' %}"></script>
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">

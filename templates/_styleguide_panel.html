@@ -1,0 +1,200 @@
+{% load i18n ui %}
+{# One theme's worth of components for /styleguide/ (ADR-19). `theme` = light|dark; ids are prefixed with it. #}
+<div class="theme-panel" data-theme="{{ theme }}">
+  <p class="section-label mb-4">{{ title }}</p>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Typography" %}</h2>
+    <p class="page-title">{% translate "Page title, 24/700" %}</p>
+    <p class="page-desc">{% translate "One-line muted description under a page title." %}</p>
+    <p class="mt-3">{% translate "Body text is 16px in the body colour." %} <a href="#" class="link">{% translate "A text link" %}</a></p>
+    <p class="section-label mt-3">{% translate "Section label" %}</p>
+    <p class="mt-2"><span class="chip">Africa/Kampala</span> <code class="mono text-[14px]">3f2a…c91e</code></p>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Buttons" %}</h2>
+    <div class="sg-row">
+      <button type="button" class="btn btn-primary">{% icon "plus" %}{% translate "Primary" %}</button>
+      <button type="button" class="btn btn-secondary">{% translate "Secondary" %}</button>
+      <button type="button" class="btn btn-ghost">{% translate "Ghost" %}</button>
+      <button type="button" class="btn btn-danger">{% icon "trash-2" size=18 %}{% translate "Danger" %}</button>
+      <button type="button" class="btn btn-icon" aria-label="{% translate 'Icon button' %}">{% icon "bell" %}<span class="notif-dot"></span></button>
+    </div>
+    <div class="sg-row mt-2">
+      <button type="button" class="btn btn-primary is-focused">{% translate "Focused" %}</button>
+      <button type="button" class="btn btn-primary" disabled>{% translate "Disabled" %}</button>
+      <button type="button" class="btn btn-secondary" disabled>{% translate "Disabled" %}</button>
+      <button type="button" class="btn btn-primary" aria-busy="true">{% icon "refresh-cw" size=18 class="spin" %}{% translate "Saving…" %}</button>
+      <button type="button" class="btn btn-ghost btn-sm">{% translate "Next" %}{% icon "chevron-right" size=16 %}</button>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Form fields" %}</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div><label class="label" for="{{ theme }}-in1">{% translate "Default" %}</label><input id="{{ theme }}-in1" class="input" placeholder="{% translate 'Placeholder' %}"></div>
+      <div><label class="label" for="{{ theme }}-in2">{% translate "Focused" %}</label><input id="{{ theme }}-in2" class="input is-focused" value="{% translate 'Typing…' %}"></div>
+      <div>
+        <label class="label" for="{{ theme }}-in3">{% translate "Error" %}</label>
+        <input id="{{ theme }}-in3" class="input is-error" aria-invalid="true" value="07">
+        <p class="field-error">{% icon "triangle-alert" size=14 %}{% translate "Enter a full phone number." %}</p>
+      </div>
+      <div><label class="label" for="{{ theme }}-in4">{% translate "Disabled" %}</label><input id="{{ theme }}-in4" class="input" disabled value="{% translate 'Read-only' %}"></div>
+      <div><label class="label" for="{{ theme }}-in5">{% translate "Select" %}</label><select id="{{ theme }}-in5" class="input"><option>{% translate "Front desk" %}</option></select></div>
+      <div><label class="label" for="{{ theme }}-in6">{% translate "Textarea" %}</label><textarea id="{{ theme }}-in6" class="input" rows="2"></textarea><p class="help">{% translate "Helper text." %}</p></div>
+    </div>
+    <div class="flex flex-wrap gap-x-6 mt-2">
+      <label class="check"><input type="checkbox" checked> {% translate "Checkbox" %}</label>
+      <label class="check"><input type="radio" name="{{ theme }}-r" checked> {% translate "Radio" %}</label>
+    </div>
+    <label class="file-drop mt-2">{% icon "camera" %}{% translate "Take photo" %}<input type="file" class="sr-only"></label>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Choice grid, segmented, tabs" %}</h2>
+    <div class="choice-grid">
+      <label class="choice"><input type="radio" name="{{ theme }}-c" checked><span class="status-dot dot-info"></span>{% translate "Person" %}</label>
+      <label class="choice"><input type="radio" name="{{ theme }}-c"><span class="status-dot dot-warning"></span>{% translate "Shift" %}</label>
+      <label class="choice"><input type="radio" name="{{ theme }}-c"><span class="status-dot dot-success"></span>{% translate "Location" %}</label>
+      <label class="choice"><input type="radio" name="{{ theme }}-c"><span class="status-dot dot-danger"></span>{% translate "Owner" %}</label>
+    </div>
+    <div class="sg-row mt-3">
+      <nav class="segmented"><a href="#" aria-current="page">{% icon "list" size=16 %}{% translate "List" %}</a><a href="#">{% icon "kanban" size=16 %}{% translate "Board" %}</a></nav>
+    </div>
+    <nav class="tabs mt-3 mb-0"><a href="#" class="tab" aria-current="page">{% translate "Locations" %}</a><a href="#" class="tab">{% translate "Shifts" %}</a></nav>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Badges, dots, pills" %}</h2>
+    <div class="sg-row">
+      <span class="badge badge-neutral">{% translate "Front desk" %}</span>
+      <span class="badge badge-success">{% translate "Done" %}</span>
+      <span class="badge badge-warning">{% translate "Flagged" %}</span>
+      <span class="badge badge-danger">{% translate "Overdue" %}</span>
+      <span class="badge badge-info">{% translate "In progress" %}</span>
+      <span class="count-chip">12</span>
+    </div>
+    <div class="sg-row mt-2">
+      <span class="status-dot dot-success"></span><span class="status-dot dot-warning"></span><span class="status-dot dot-danger"></span><span class="status-dot dot-info"></span><span class="status-dot dot-idle"></span>
+      <span class="status-pill"><span class="status-dot dot-success"></span>{% translate "Online" %}</span>
+      <span class="status-pill is-offline"><span class="status-dot dot-idle"></span>{% translate "Offline" %}</span>
+      <span class="status-pill is-warning">{% icon "refresh-cw" size=16 %}{% translate "2 waiting" %}</span>
+      <span class="status-pill is-danger">{% icon "triangle-alert" size=16 %}{% translate "Sync problem" %}</span>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Avatars" %}</h2>
+    <div class="sg-row">
+      <span class="avatar avatar-xs">GN</span>
+      <span class="avatar">PO<span class="presence dot-success"></span></span>
+      <span class="avatar">AK<span class="presence dot-warning"></span></span>
+      <span class="avatar avatar-lg">DM<span class="presence dot-idle"></span></span>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Cards" %}</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="card"><p class="card-title">{% icon "clipboard-check" %}{% translate "Card title" %}</p><p class="card-subtitle">{% translate "Card subtitle in faint text." %}</p></div>
+      <a href="#" class="card"><p class="card-title">{% translate "Clickable card" %}</p><p class="card-subtitle">{% translate "Hover: stronger border and shadow." %}</p></a>
+      <div class="card card-compact stat"><span class="stat-label"><span class="status-dot dot-success"></span>{% translate "Done" %}</span><span class="stat-value">42</span><span class="stat-note">{% translate "3 late" %}</span></div>
+      <div class="card space-y-3" aria-busy="true"><span class="skeleton h-5 w-1/2"></span><span class="skeleton h-4 w-full"></span><span class="skeleton h-4 w-3/4"></span></div>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Kanban" %}</h2>
+    <div class="kanban-col">
+      <header class="kanban-head"><span class="status-dot dot-info"></span><h3 class="kanban-title">{% translate "In progress" %}</h3><span class="count-chip">2</span></header>
+      <article class="task-card">
+        <div class="task-card-top"><span class="badge badge-neutral">{% icon "map-pin" size=12 %}{% translate "Rooms" %}</span><span class="badge badge-danger"><span class="status-dot dot-danger"></span>{% translate "Overdue" %}</span></div>
+        <h4 class="task-card-title">{% translate "Clean room 12" %}</h4>
+        <p class="task-card-desc">{% translate "Change sheets and towels, restock the minibar, check the shower drain and report anything broken to the front desk." %}</p>
+        <div class="task-card-foot">
+          <span class="who"><span class="avatar avatar-xs">PO</span>Peter O.</span>
+          <span class="meta">{% icon "calendar" size=14 %}Tue 14:30</span>
+          <span class="task-card-actions"><button type="button" class="btn btn-ghost btn-sm">{% translate "Mark done" %}{% icon "chevron-right" size=16 %}</button></span>
+        </div>
+      </article>
+      <p class="kanban-empty">{% translate "Nothing here." %}</p>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Person card" %}</h2>
+    <div class="card">
+      <div class="person-head">
+        <span class="avatar avatar-lg">AK<span class="presence dot-success"></span></span>
+        <div><p class="person-name">Aisha K.</p><p class="person-role">{% translate "Supervisor" %}</p></div>
+      </div>
+      <div class="meta-row">
+        <span class="meta">{% icon "map-pin" size=14 %}{% translate "Front desk" %} · <span class="mono">Africa/Kampala</span></span>
+        <span class="meta">{% icon "clock" size=14 %}{% translate "Active 2 minutes ago" %}</span>
+      </div>
+      <p class="quote-box">{% icon "message-square" size=16 %}<span>{% translate "Working on: Night round, block B" %}</span></p>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Filter bar, list, table" %}</h2>
+    <div class="filter-bar">
+      <span class="filter-label">{% icon "filter" size=16 %}{% translate "Filters:" %}</span>
+      <select class="input" aria-label="{% translate 'Status' %}"><option>{% translate "All" %}</option></select>
+      <select class="input" aria-label="{% translate 'Location' %}"><option>{% translate "All locations" %}</option></select>
+    </div>
+    <ul class="list mb-4">
+      <li class="list-row">{% icon "map-pin" class="text-faint" %}<span class="flex-1 row-title">{% translate "Restaurant" %}</span></li>
+      <li class="list-row">{% icon "map-pin" class="text-faint" %}<span class="flex-1 row-title">{% translate "Front desk" %}</span><span class="badge badge-neutral">{% translate "Inactive" %}</span></li>
+    </ul>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th scope="col">{% translate "Name" %}</th><th scope="col" class="num">{% translate "Done" %}</th><th scope="col" class="num">{% translate "Overdue" %}</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Peter O.</th><td class="num">18</td><td class="num"><span class="status-dot dot-danger mr-1"></span>2</td></tr>
+          <tr><th scope="row">Grace N.</th><td class="num">7</td><td class="num">0</td></tr>
+          <tr><td><span class="skeleton h-4 w-24"></span></td><td><span class="skeleton h-4 w-8 ml-auto"></span></td><td><span class="skeleton h-4 w-8 ml-auto"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Feedback" %}</h2>
+    <div class="space-y-2">
+      <p class="alert alert-danger">{% icon "triangle-alert" %}<span>{% translate "Wrong phone number or PIN." %}</span></p>
+      <p class="alert alert-warning">{% icon "flag" %}<span>{% translate "No cleaning supplies — waiting for a supervisor" %}</span></p>
+      <p class="alert alert-success">{% icon "circle-check" %}<span>{% translate "Done by Peter at 14:02" %}</span></p>
+      <p class="alert alert-info">{% icon "info" %}<span>{% translate "Opens at 06:30." %}</span></p>
+      <progress class="progress" value="60" max="100" aria-label="{% translate 'Progress' %}">60%</progress>
+      <div class="toast is-success">{% icon "circle-check" class="text-success" %}<span class="flex-1">{% translate "Invited Grace." %}</span></div>
+      <div class="toast is-error">{% icon "triangle-alert" class="text-danger" %}<span class="flex-1">{% translate "That task was already done." %}</span></div>
+    </div>
+    <details class="disclosure mt-3">
+      <summary>{% icon "flag" %}{% translate "Report a problem" %}{% icon "chevron-down" size=16 class="ml-auto text-faint" %}</summary>
+      <div class="disclosure-body">{% translate "Disclosure body." %}</div>
+    </details>
+  </section>
+
+  <section class="sg-section">
+    <h2 class="card-title mb-3">{% translate "Empty state, modal, notifications" %}</h2>
+    <div class="card empty-state">
+      <span class="empty-icon">{% icon "inbox" %}</span>
+      <p class="empty-title">{% translate "No tasks match." %}</p>
+      <p class="empty-text">{% translate "Try another day, location or status." %}</p>
+      <button type="button" class="btn btn-primary mt-2">{% icon "plus" %}{% translate "New task" %}</button>
+    </div>
+    <div class="sg-demo-modal mt-3">
+      <div class="modal" role="dialog" aria-labelledby="{{ theme }}-modal-title">
+        <p id="{{ theme }}-modal-title" class="modal-title">{% translate "Cancel this task?" %}</p>
+        <p class="text-muted mt-2">{% translate "Staff will no longer see it." %}</p>
+        <div class="flex justify-end gap-2 mt-6"><button type="button" class="btn btn-ghost">{% translate "Keep" %}</button><button type="button" class="btn btn-danger">{% translate "Cancel task" %}</button></div>
+      </div>
+    </div>
+    <ul class="list mt-3">
+      <li class="notif-item is-new"><span class="text-danger">{% icon "triangle-alert" size=18 %}</span><div><p class="font-semibold text-heading">{% translate "Overdue" %}</p><p>{% translate "Clean room 12 is overdue." %}</p></div></li>
+      <li class="notif-item"><span class="text-faint">{% icon "clock" size=18 %}</span><div><p class="font-semibold text-heading">{% translate "Reminder" %}</p><p>{% translate "Opening checklist due 07:00." %}</p></div></li>
+    </ul>
+  </section>
+</div>

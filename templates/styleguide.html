@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load i18n ui %}
+{% block title %}{% translate "Style guide" %}{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{% translate "Style guide" %}</h1>
+      <p class="page-desc">{% translate "Every component in every state, in light and dark, for visual checks. Sample content only." %}</p>
+    </div>
+  </div>
+  <div class="grid gap-6 xl:grid-cols-2">
+    {% include "_styleguide_panel.html" with theme="light" title="Light" %}
+    {% include "_styleguide_panel.html" with theme="dark" title="Dark" %}
+  </div>
+</div>
+{% endblock %}
