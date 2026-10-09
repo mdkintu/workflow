@@ -134,9 +134,9 @@ def my_tasks(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-@role_required(Role.SUPERVISOR)
+@role_required(Role.STAFF)
 def task_list(request: HttpRequest) -> HttpResponse:
-    """Supervisor+ list with filters (bucket, location, day). Filtering is an
+    """Staff+ list with filters (bucket, location, day). Filtering is an
     HTMX swap of just the rows."""
     now = timezone.now()
     view = "board" if request.GET.get("view") == "board" else "list"
