@@ -83,12 +83,7 @@
         <div class="mb-4">
           <p class="label">{% translate "Days" %}</p>
           <div class="space-y-2">
-            {% for value, label in form.weekdays.field.choices %}
-              <div class="flex items-center">
-                <input type="checkbox" name="weekdays" id="id_weekdays_{{ value }}" value="{{ value }}" {% if value|stringformat:"s" in form.weekdays.value %}checked{% endif %} class="checkbox">
-                <label for="id_weekdays_{{ value }}" class="ml-2">{{ label }}</label>
-              </div>
-            {% endfor %}
+            {{ form.weekdays }}
           </div>
         </div>
 
