@@ -185,6 +185,7 @@ def task_list(request: HttpRequest) -> HttpResponse:
         "locations": Location.objects.filter(is_active=True),
         "buckets": BUCKETS,
         "can_create": can(request.membership, "task.create"),
+        "can_create_self": can(request.membership, "task.create_self"),
     }
     if _is_htmx(request):
         template = "tasks/_task_board.html" if view == "board" else "tasks/_task_rows.html"
